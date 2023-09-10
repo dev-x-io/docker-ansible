@@ -1,0 +1,13 @@
+# Ansible playbook to ping all hosts in the inventory file
+
+---
+- name: Simple init Playbook
+  hosts: all
+
+  pre_tasks:
+  ## Default checks
+    - name: Ping hosts
+      ping:
+
+    - name: Gather host information
+      setup:
