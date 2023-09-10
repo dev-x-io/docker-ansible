@@ -42,15 +42,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Bepaal de naam en tags voor onze Docker-image.
-      - name: Stel Docker Meta in
+      - name: Set up Docker Meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          # Hier bouwen we de naam van de image met onze DockerHub gebruikersnaam en de naam van de repository.
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.repo_name.outputs.image_name }}
+          images: ${{ github.repository_owner }}/${{ github.event.repository.name }}
           tags: |
             type=semver,pattern={{version}}
-            type=branch
+            type=sha
             type=ref,event=branch
             type=ref,event=pr
 
