@@ -1,0 +1,33 @@
+# Versiebeheer
+.git
+.gitignore
+.gitattributes
+
+# Bestanden van het besturingssysteem
+.DS_Store
+Thumbs.db
+
+# Build en test artefacten
+*.log
+*.tmp
+*.bak
+*.swp
+*.pid
+*.pyc
+*.pyo
+*.egg-info
+__pycache__/
+
+# IDE en editor mappen en bestanden
+.vscode/
+.idea/
+*.iml
+*.sublime-*
+*.swo
+
+# Overige bestanden en mappen die niet nodig zijn voor het Docker-image
+tests/
+docs/
+LICENSE
+README.md
+CONTRIBUTING.md
