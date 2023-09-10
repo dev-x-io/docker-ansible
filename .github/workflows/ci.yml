@@ -48,8 +48,7 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.repo_name.outputs.image_name }}
           tags: |
-            type=semver,pattern={{version}}
-            type=ref,event=branch
+            type=semver,pattern={{version}},value=latest
             type=sha,format=short
 
       # Bouw een nieuwe Docker-image met onze code en "push" (upload) deze naar DockerHub.
