@@ -1,0 +1,17 @@
+version: '3.8'  # Versie van de Docker Compose specificatie die we gebruiken.
+
+services:
+  ansible-container:  # De naam van onze service.
+    build: 
+      context: .  # Het pad naar de directory die de Dockerfile en de broncode bevat.
+      dockerfile: Dockerfile  # De naam van het Dockerfile.
+    image: ${DOCKERHUB_USERNAME}/repository:latest  # De naam van de image die we willen bouwen. 
+                                                   # Vervang 'repository' door de gewenste naam van je DockerHub-repository.
+    volumes:
+      - ./ansible:/ansible  # Koppel de lokale "ansible" directory naar de "/ansible" directory in de container.
+      - ~/.ssh:/home/ansible/.ssh:ro  # Koppel de lokale SSH-sleutels naar de container (alleen-lezen modus).
+    environment:
+      - ANSIBLE_HOST_KEY_CHECKING=False  # Om te voorkomen dat Ansible vraagt of je zeker weet dat je wilt verbinden met een onbekende host.
+    command: ["ansible", "--version"]  # Het standaardcommando om uit te voeren wanneer de container start.
+
+# Hier kun je netwerken, volumes en andere top-level configuraties toevoegen indien nodig.
