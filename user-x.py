@@ -18,9 +18,6 @@ function ansible() {
         else:
             print("Ansible functie is al aanwezig in uw bashrc.")
 
-    # Start een nieuwe Bash-sessie
-    os.system('bash')
-
 def add_ansible_function_windows():
     # Verkrijg het pad naar het PowerShell-profiel
     profile_path = subprocess.check_output(['powershell', '-Command', 'echo $PROFILE'], universal_newlines=True).strip()
@@ -42,9 +39,6 @@ function ansible {
             print("Ansible functie is toegevoegd aan uw profiel!")
         else:
             print("Ansible functie is al aanwezig in uw profiel.")
-
-    # Start een nieuwe PowerShell-sessie
-    os.system('start powershell')
 
 if __name__ == "__main__":
     if os.name == 'posix':
