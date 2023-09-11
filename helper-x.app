@@ -1,19 +1,20 @@
 import os
 import subprocess
 
+DOCKER_IMAGE = "devxio/ansible"
 ANSIBLE_COMMANDS = [
-    ("ansible", "🤖"),
-    ("ansible-config", "⚙️"),
-    ("ansible-console", "🎮"),
-    ("ansible-galaxy", "🌌"),
-    ("ansible-playbook", "📘"),
-    ("ansible-test", "🧪"),
-    ("ansible-community", "🌍"),
-    ("ansible-connection", "🔗"),
-    ("ansible-doc", "📄"),
-    ("ansible-inventory", "📦"),
-    ("ansible-pull", "⬇️"),
-    ("ansible-vault", "🔐")
+    "ansible",
+    "ansible-config",
+    "ansible-console",
+    "ansible-galaxy",
+    "ansible-playbook",
+    "ansible-test",
+    "ansible-community",
+    "ansible-connection",
+    "ansible-doc",
+    "ansible-inventory",
+    "ansible-pull",
+    "ansible-vault"
 ]
 
 def function_exists(function_name):
@@ -33,14 +34,14 @@ def add_ansible_aliases_linux():
     
     added_aliases = []
 
-    for cmd, emoji in ANSIBLE_COMMANDS:
+    for cmd in ANSIBLE_COMMANDS:
         function_name = cmd
         if function_exists(function_name):
             function_name = "docker-" + cmd
         
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v $(pwd):/ansible devxio/ansible {cmd} $@
+    docker run -it --rm -v $(pwd):/ansible {DOCKER_IMAGE} {cmd} $@
 }}
 """
 
@@ -48,7 +49,7 @@ function {function_name}() {{
             f.seek(0)
             if ansible_function not in f.read():
                 f.write(ansible_function)
-                added_aliases.append((emoji, function_name))
+                added_aliases.append(function_name)
 
     display_report(added_aliases)
 
@@ -61,14 +62,14 @@ def add_ansible_aliases_windows():
 
     added_aliases = []
 
-    for cmd, emoji in ANSIBLE_COMMANDS:
+    for cmd in ANSIBLE_COMMANDS:
         function_name = cmd
         if function_exists_windows(function_name):
             function_name = "docker-" + cmd
 
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" devxio/ansible {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" {DOCKER_IMAGE} {cmd} $args
 }}
 """
 
@@ -76,14 +77,17 @@ function {function_name}() {{
             f.seek(0)
             if ansible_function not in f.read():
                 f.write(ansible_function)
-                added_aliases.append((emoji, function_name))
+                added_aliases.append(function_name)
 
     display_report(added_aliases)
 
 def display_report(added_aliases):
-    print("Rapport van toegevoegde functies:")
-    for emoji, cmd in added_aliases:
-        print(f"{emoji} {cmd}")
+    print("\nRapport van toegevoegde functies:")
+    print("-" * 40)
+    print(f"Bron Docker Image: {DOCKER_IMAGE}\n")
+    for cmd in added_aliases:
+        print(f"  - {cmd}")
+    print("-" * 40)
 
 if __name__ == "__main__":
     if os.name == 'posix':
