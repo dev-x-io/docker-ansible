@@ -1,9 +1,20 @@
 import os
 import subprocess
 
+DOCKER_IMAGE = "devxio/ansible"
 ANSIBLE_COMMANDS = [
-    "ansible", "ansible-config", "ansible-console", "ansible-galaxy", "ansible-playbook", "ansible-test",
-    "ansible-community", "ansible-connection", "ansible-doc", "ansible-inventory", "ansible-pull", "ansible-vault"
+    "ansible",
+    "ansible-config",
+    "ansible-console",
+    "ansible-galaxy",
+    "ansible-playbook",
+    "ansible-test",
+    "ansible-community",
+    "ansible-connection",
+    "ansible-doc",
+    "ansible-inventory",
+    "ansible-pull",
+    "ansible-vault"
 ]
 
 def function_exists(function_name):
@@ -30,7 +41,7 @@ def add_ansible_aliases_linux():
         
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v $(pwd):/ansible devxio/ansible {cmd} $@
+    docker run -it --rm -v $(pwd):/ansible {DOCKER_IMAGE} {cmd} $@
 }}
 """
 
@@ -40,7 +51,7 @@ function {function_name}() {{
                 f.write(ansible_function)
                 added_aliases.append(function_name)
 
-    print(f"Toegevoegde functies: {', '.join(added_aliases)}")
+    display_report(added_aliases)
 
 def add_ansible_aliases_windows():
     profile_path = subprocess.check_output(['powershell', '-Command', 'echo $PROFILE'], universal_newlines=True).strip()
@@ -58,7 +69,7 @@ def add_ansible_aliases_windows():
 
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" devxio/ansible {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" {DOCKER_IMAGE} {cmd} $args
 }}
 """
 
@@ -68,7 +79,15 @@ function {function_name}() {{
                 f.write(ansible_function)
                 added_aliases.append(function_name)
 
-    print(f"Toegevoegde functies: {', '.join(added_aliases)}")
+    display_report(added_aliases)
+
+def display_report(added_aliases):
+    print("\nRapport van toegevoegde functies:")
+    print("-" * 40)
+    print(f"Bron Docker Image: {DOCKER_IMAGE}\n")
+    for cmd in added_aliases:
+        print(f"  - {cmd}")
+    print("-" * 40)
 
 if __name__ == "__main__":
     if os.name == 'posix':
