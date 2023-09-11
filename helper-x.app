@@ -28,7 +28,7 @@ def add_ansible_function_windows():
 
     ansible_function = """
 function ansible {
-    docker run -it --rm -v "${pwd}:/ansible" devxio/ansible $args
+    docker run -it --rm -v "${pwd}:/ansible" devxio/ansible $argsg
 }
 """
 
