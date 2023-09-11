@@ -2,7 +2,7 @@
 FROM alpine:latest AS base
 
 # Installeer programma's die we nodig hebben: Python, pip (om Python-pakketten te installeren) en Ansible.
-RUN apk add --no-cache python3 py3-pip ansible
+RUN apk add --no-cache python3 py3-pip ansible git
 
 # Installeer een Python-pakket genaamd pyfiglet (voor mooie tekst) en Pillow (voor afbeeldingsbewerking).
 RUN pip3 install Pillow pyfiglet
