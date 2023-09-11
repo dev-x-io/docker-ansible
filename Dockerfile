@@ -15,7 +15,7 @@ RUN pip3 install Pillow pyfiglet
 RUN addgroup ansible && \
     adduser -S ansible -G ansible && \
     mkdir /ansible && \
-    chown -R ansible:ansible /ansible && \
+    chown -R ansible /ansible && \
     mkdir /home/ansible/.ssh && \
     chown -R ansible:ansible /home/ansible && \
     chmod 700 /home/ansible/.ssh
