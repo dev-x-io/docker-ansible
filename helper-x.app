@@ -2,8 +2,18 @@ import os
 import subprocess
 
 ANSIBLE_COMMANDS = [
-    "ansible", "ansible-config", "ansible-console", "ansible-galaxy", "ansible-playbook", "ansible-test",
-    "ansible-community", "ansible-connection", "ansible-doc", "ansible-inventory", "ansible-pull", "ansible-vault"
+    ("ansible", "🤖"),
+    ("ansible-config", "⚙️"),
+    ("ansible-console", "🎮"),
+    ("ansible-galaxy", "🌌"),
+    ("ansible-playbook", "📘"),
+    ("ansible-test", "🧪"),
+    ("ansible-community", "🌍"),
+    ("ansible-connection", "🔗"),
+    ("ansible-doc", "📄"),
+    ("ansible-inventory", "📦"),
+    ("ansible-pull", "⬇️"),
+    ("ansible-vault", "🔐")
 ]
 
 def function_exists(function_name):
@@ -23,7 +33,7 @@ def add_ansible_aliases_linux():
     
     added_aliases = []
 
-    for cmd in ANSIBLE_COMMANDS:
+    for cmd, emoji in ANSIBLE_COMMANDS:
         function_name = cmd
         if function_exists(function_name):
             function_name = "docker-" + cmd
@@ -38,9 +48,9 @@ function {function_name}() {{
             f.seek(0)
             if ansible_function not in f.read():
                 f.write(ansible_function)
-                added_aliases.append(function_name)
+                added_aliases.append((emoji, function_name))
 
-    print(f"Toegevoegde functies: {', '.join(added_aliases)}")
+    display_report(added_aliases)
 
 def add_ansible_aliases_windows():
     profile_path = subprocess.check_output(['powershell', '-Command', 'echo $PROFILE'], universal_newlines=True).strip()
@@ -51,7 +61,7 @@ def add_ansible_aliases_windows():
 
     added_aliases = []
 
-    for cmd in ANSIBLE_COMMANDS:
+    for cmd, emoji in ANSIBLE_COMMANDS:
         function_name = cmd
         if function_exists_windows(function_name):
             function_name = "docker-" + cmd
@@ -66,9 +76,14 @@ function {function_name}() {{
             f.seek(0)
             if ansible_function not in f.read():
                 f.write(ansible_function)
-                added_aliases.append(function_name)
+                added_aliases.append((emoji, function_name))
 
-    print(f"Toegevoegde functies: {', '.join(added_aliases)}")
+    display_report(added_aliases)
+
+def display_report(added_aliases):
+    print("Rapport van toegevoegde functies:")
+    for emoji, cmd in added_aliases:
+        print(f"{emoji} {cmd}")
 
 if __name__ == "__main__":
     if os.name == 'posix':
