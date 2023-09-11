@@ -5,6 +5,12 @@ name: Docker CI/CD
 on:
   # Als er iets wordt "gepusht" naar de "main" tak of als er een nieuwe versie-tag wordt toegevoegd.
   push:
+    paths-ignore:
+      - '**.md'          # Negeer alle markdown bestanden
+      - 'docs/**'        # Negeer alle bestanden in de 'docs' map
+      - 'img/**'         # Negeer alle bestanden in de 'img' map
+      - 'helper-x.app'   # Negeer het helper-x.app script
+      - 'Makefile'       # Negeer de Makefile
     branches:
       - main
       - develop
