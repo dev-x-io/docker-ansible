@@ -19,6 +19,12 @@ ANSIBLE_COMMANDS = [
 
 SSH_DIR_PATH = os.environ.get('SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
 
+def config_ssh_dir_path():
+    new_path = input("Voer het nieuwe pad in voor ANSIBLE_SSH_DIR_PATH: ").strip()
+    with open(os.path.expanduser("~/.bashrc"), 'a') as f:
+        f.write(f"\nexport ANSIBLE_SSH_DIR_PATH={new_path}\n")
+    print(f"ANSIBLE_SSH_DIR_PATH is geconfigureerd naar {new_path}")
+
 def function_exists(function_name):
     """Controleer of een gegeven functie bestaat in de shell (voor Linux)."""
     return os.system(f"type {function_name} > /dev/null 2>&1") == 0
@@ -71,7 +77,7 @@ def add_ansible_aliases_windows():
 
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" -v "{SSH_DIR_PATH}:/home/ansible/.ssh" {DOCKER_IMAGE} {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" -v "{SSH_DIR_PATH}:{SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} $args
 }}
 """
 
@@ -92,7 +98,11 @@ def display_report(added_aliases):
     print("-" * 40)
 
 if __name__ == "__main__":
-    if os.name == 'posix':
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == 'config-ssh-ansible':
+        config_ssh_dir_path()
+    elif os.name == 'posix':
         add_ansible_aliases_linux()
     elif os.name == 'nt':
         add_ansible_aliases_windows()
