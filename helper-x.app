@@ -17,7 +17,7 @@ ANSIBLE_COMMANDS = [
     "ansible-vault"
 ]
 
-SSH_DIR_PATH = os.environ.get('SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
+SSH_DIR_PATH = os.environ.get('ANSIBLE_SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
 
 def config_ssh_dir_path():
     new_path = input("Voer het nieuwe pad in voor ANSIBLE_SSH_DIR_PATH: ").strip()
