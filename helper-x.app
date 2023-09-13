@@ -17,6 +17,8 @@ ANSIBLE_COMMANDS = [
     "ansible-vault"
 ]
 
+SSH_DIR_PATH = os.environ.get('SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
+
 def function_exists(function_name):
     """Controleer of een gegeven functie bestaat in de shell (voor Linux)."""
     return os.system(f"type {function_name} > /dev/null 2>&1") == 0
@@ -41,7 +43,7 @@ def add_ansible_aliases_linux():
         
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v $(pwd):/ansible {DOCKER_IMAGE} {cmd} $@
+    docker run -it --rm -v $(pwd):/ansible -v {SSH_DIR_PATH}:{SSH_DIR_PATH} {DOCKER_IMAGE} {cmd} $@
 }}
 """
 
@@ -69,7 +71,7 @@ def add_ansible_aliases_windows():
 
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" {DOCKER_IMAGE} {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" -v "{SSH_DIR_PATH}:/home/ansible/.ssh" {DOCKER_IMAGE} {cmd} $args
 }}
 """
 
