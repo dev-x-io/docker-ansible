@@ -96,6 +96,7 @@ def display_report(added_aliases):
     for cmd in added_aliases:
         print(f"  - {cmd}")
     print("-" * 40)
+    print("\nTip: Gebruik 'config-ssh' om het pad voor SSH-sleutels te configureren.")
 
 if __name__ == "__main__":
     import sys
