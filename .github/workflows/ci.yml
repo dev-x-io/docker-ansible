@@ -19,6 +19,12 @@ on:
 
   # Als er een wijzigingsverzoek (pull request) is naar de "main" tak.
   pull_request:
+    paths-ignore:
+      - '**.md'          # Negeer alle markdown bestanden
+      - './docs/**'        # Negeer alle bestanden in de 'docs' map
+      - './img/**'         # Negeer alle bestanden in de 'img' map
+      - '*.app'   # Negeer het helper-x.app script
+      - './Makefile'       # Negeer de Makefile
     branches:
       - main
 

@@ -20,9 +20,9 @@ ANSIBLE_COMMANDS = [
 SSH_DIR_PATH = os.environ.get('ANSIBLE_SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
 
 if SSH_DIR_PATH == os.path.expanduser('~/.ssh'):
-    DOCKER_SSH_DIR_PATH = '/home/ansible/.ssh'
+    ANSIBLE_SSH_DIR_PATH = '/home/ansible/.ssh'
 else:
-    DOCKER_SSH_DIR_PATH = SSH_DIR_PATH
+    ANSIBLE_SSH_DIR_PATH = SSH_DIR_PATH
 
 def config_ssh_dir_path():
     new_path = input("Voer het nieuwe pad in voor ANSIBLE_SSH_DIR_PATH: ").strip()
@@ -54,7 +54,7 @@ def add_ansible_aliases_linux():
         
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v $(pwd):/ansible -v {SSH_DIR_PATH}:{DOCKER_SSH_DIR_PATH} {DOCKER_IMAGE} {cmd} $@
+    docker run -it --rm -v $(pwd):/ansible -v {SSH_DIR_PATH}:{ANSIBLE_SSH_DIR_PATH} {DOCKER_IMAGE} {cmd} $@
 }}
 """
 
@@ -83,7 +83,7 @@ def add_ansible_aliases_windows():
         windows_ssh_path = SSH_DIR_PATH.replace("\\", "/")
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" -v "{windows_ssh_path}:{DOCKER_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" -v "{windows_ssh_path}:{ANSIBLE_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} $args
 }}
 """
 
@@ -107,7 +107,7 @@ def add_ansible_aliases_cmd():
         if not os.path.exists(batch_file_path):
             with open(batch_file_path, 'w') as f:
                 f.write(f'@echo off\n')
-                f.write(f'docker run -it --rm -v "%cd%:/ansible" -v "{SSH_DIR_PATH}:{DOCKER_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} %*\n')
+                f.write(f'docker run -it --rm -v "%cd%:/ansible" -v "{SSH_DIR_PATH}:{ANSIBLE_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} %*\n')
             added_aliases.append(cmd)
 
     display_report(added_aliases)
