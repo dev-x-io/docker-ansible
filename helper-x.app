@@ -19,6 +19,11 @@ ANSIBLE_COMMANDS = [
 
 SSH_DIR_PATH = os.environ.get('ANSIBLE_SSH_DIR_PATH', os.path.expanduser('~/.ssh'))
 
+if SSH_DIR_PATH == os.path.expanduser('~/.ssh'):
+    DOCKER_SSH_DIR_PATH = '/home/ansible/.ssh'
+else:
+    DOCKER_SSH_DIR_PATH = SSH_DIR_PATH
+
 def config_ssh_dir_path():
     new_path = input("Voer het nieuwe pad in voor ANSIBLE_SSH_DIR_PATH: ").strip()
     with open(os.path.expanduser("~/.bashrc"), 'a') as f:
@@ -49,7 +54,7 @@ def add_ansible_aliases_linux():
         
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v $(pwd):/ansible -v {SSH_DIR_PATH}:{SSH_DIR_PATH} {DOCKER_IMAGE} {cmd} $@
+    docker run -it --rm -v $(pwd):/ansible -v {SSH_DIR_PATH}:{DOCKER_SSH_DIR_PATH} {DOCKER_IMAGE} {cmd} $@
 }}
 """
 
@@ -82,12 +87,28 @@ function {function_name}() {{
 }}
 """
 
-
         with open(profile_path, 'a+') as f:
             f.seek(0)
             if ansible_function not in f.read():
                 f.write(ansible_function)
                 added_aliases.append(function_name)
+
+    display_report(added_aliases)
+
+def add_ansible_aliases_cmd():
+    cmd_aliases_dir = "C:\\ansible-docker-aliases"
+    if not os.path.exists(cmd_aliases_dir):
+        os.makedirs(cmd_aliases_dir)
+
+    added_aliases = []
+
+    for cmd in ANSIBLE_COMMANDS:
+        batch_file_path = os.path.join(cmd_aliases_dir, f"{cmd}.bat")
+        if not os.path.exists(batch_file_path):
+            with open(batch_file_path, 'w') as f:
+                f.write(f'@echo off\n')
+                f.write(f'docker run -it --rm -v "%cd%:/ansible" -v "{SSH_DIR_PATH}:{DOCKER_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} %*\n')
+            added_aliases.append(cmd)
 
     display_report(added_aliases)
 
@@ -108,6 +129,9 @@ if __name__ == "__main__":
     elif os.name == 'posix':
         add_ansible_aliases_linux()
     elif os.name == 'nt':
-        add_ansible_aliases_windows()
+        if 'COMSPEC' in os.environ and 'cmd.exe' in os.environ['COMSPEC']:
+            add_ansible_aliases_cmd()
+        else:
+            add_ansible_aliases_windows()
     else:
         print("Onbekend besturingssysteem.")
