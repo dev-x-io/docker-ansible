@@ -75,11 +75,13 @@ def add_ansible_aliases_windows():
         if function_exists_windows(function_name):
             function_name = "docker-" + cmd
 
+        windows_ssh_path = SSH_DIR_PATH.replace("\\", "/")
         ansible_function = f"""
 function {function_name}() {{
-    docker run -it --rm -v "${{pwd}}:/ansible" -v "{SSH_DIR_PATH}:{SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} $args
+    docker run -it --rm -v "${{pwd}}:/ansible" -v "{windows_ssh_path}:{DOCKER_SSH_DIR_PATH}" {DOCKER_IMAGE} {cmd} $args
 }}
 """
+
 
         with open(profile_path, 'a+') as f:
             f.seek(0)
