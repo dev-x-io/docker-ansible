@@ -124,7 +124,7 @@ def display_report(added_aliases):
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'config-ssh-ansible':
+    if len(sys.argv) > 1 and sys.argv[1] == 'config-ssh':
         config_ssh_dir_path()
     elif os.name == 'posix':
         add_ansible_aliases_linux()
