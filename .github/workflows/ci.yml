@@ -7,10 +7,10 @@ on:
   push:
     paths-ignore:
       - '**.md'          # Negeer alle markdown bestanden
-      - 'docs/**'        # Negeer alle bestanden in de 'docs' map
-      - 'img/**'         # Negeer alle bestanden in de 'img' map
-      - 'helper-x.app'   # Negeer het helper-x.app script
-      - 'Makefile'       # Negeer de Makefile
+      - './docs/**'        # Negeer alle bestanden in de 'docs' map
+      - './img/**'         # Negeer alle bestanden in de 'img' map
+      - '*.app'   # Negeer het helper-x.app script
+      - './Makefile'       # Negeer de Makefile
     branches:
       - main
       - develop
