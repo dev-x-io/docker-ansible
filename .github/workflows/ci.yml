@@ -43,8 +43,13 @@ jobs:
 
       # Remove 'refs/tags/' from APP_VERSION and set it as an environment variable
       - name: Set APP_VERSION
-        run: echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
-
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
+          else
+            echo "APP_VERSION=sha-${{ github.sha }}" >> $GITHUB_ENV
+          fi
+          
       # Prepare Docker for more efficient builds with Buildx.
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
