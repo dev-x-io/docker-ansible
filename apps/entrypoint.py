@@ -40,4 +40,3 @@ else:
         subprocess.run(sys.argv[1:])
     else:
         print("No command provided. Container is running idle.")
-
