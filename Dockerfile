@@ -27,6 +27,10 @@ ENTRYPOINT ["python3", "/usr/local/bin/entrypoint.py"]
 # Switch to a new build stage.
 FROM base AS final
 
+# Declare APP_VERSION for the base stage
+ARG APP_VERSION=v0.0.0
+ENV APP_VERSION=${APP_VERSION}
+
 # Install additional packages.
 RUN apk add --no-cache sudo openssh
 

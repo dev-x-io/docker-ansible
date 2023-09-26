@@ -6,7 +6,7 @@ import json
 from pyfiglet import figlet_format
 
 # Fetch the APP_VERSION environment variable or use a default of 'v0.0.0' if not set.
-container_version = os.environ.get('APP_VERSION', 'v0.0.0')
+container_version = os.environ['APP_VERSION']
 
 # This is a startup script for our container. When the container starts, this script is executed first.
 
