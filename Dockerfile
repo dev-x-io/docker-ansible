@@ -1,48 +1,52 @@
-# We beginnen met een lichte versie van het Linux-besturingssysteem genaamd Alpine.
-FROM alpine:latest AS base
+# Start with a lightweight base image (Alpine Linux).
+# We're using a multi-stage build process. This is the "build" stage.
+FROM alpine:3.18.3 AS build
 
-# Installeer programma's die we nodig hebben: Python, pip (om Python-pakketten te installeren) en Ansible.
-RUN apk add --no-cache python3 py3-pip ansible git
+# Copy the Python script that will be the entry point of our application.
+# This makes it available for further stages.
+COPY apps/entrypoint.py /usr/local/bin/
 
-# Installeer een Python-pakket genaamd pyfiglet (voor mooie tekst) en Pillow (voor afbeeldingsbewerking).
-RUN pip3 install Pillow pyfiglet
+# Install essential packages and Python libraries, then clean up to reduce image size.
+# 1. py3-pip is a package manager for Python packages.
+# 2. python3 and ansible are the main packages we need.
+# 3. pyfiglet is a Python library for fancy text rendering.
+# 4. Cleanup steps remove unnecessary cache and temp files.
+RUN apk add --no-cache --virtual .build-deps py3-pip && \
+    apk add --no-cache python3 ansible && \
+    pip3 install --no-cache-dir pyfiglet && \
+    apk del .build-deps && \
+    rm -rf /var/cache/apk/* /root/.cache && \
+    chmod +x /usr/local/bin/entrypoint.py  # Make the script executable
 
-# Maak een nieuwe gebruiker genaamd "ansible" zodat niet alles als de hoofdgebruiker wordt uitgevoerd (veiligheidsmaatregel).
-# Maak een directory voor Ansible playbooks.
-# Maak een directory voor SSH-sleutels.
-# Geef eigendom van de directory aan de "ansible" gebruiker.
-# Zorg voor de juiste toegangsrechten.
-RUN addgroup ansible && \
+# This is the final stage, where we gather only the artifacts we need.
+FROM alpine:3.18.3 AS final
+
+# Declare and set a version environment variable.
+# This can be overridden at build-time using: docker build --build-arg APP_VERSION=new_value
+ARG APP_VERSION=v0.0.0
+ENV APP_VERSION=${APP_VERSION}
+
+# Copy essential files from the previous stage.
+# This includes our entry point script and Python libraries.
+COPY --from=build /usr/local/bin/entrypoint.py /usr/local/bin/entrypoint.py
+COPY --from=build /usr/lib/python3.11/site-packages/ /usr/lib/python3.11/site-packages/
+
+# Install only the necessary packages to run our application.
+# nmap and openssh are for network scanning and SSH connectivity.
+# sudo is for privilege escalation.
+RUN apk add --no-cache python3 nmap openssh sudo && \
+    echo '%ansible ALL=(ALL:ALL) NOPASSWD: /bin/chown, /bin/chmod, /bin/ping, /bin/nmap' > /etc/sudoers.d/ansible && \
+    addgroup ansible && \
     adduser -S ansible -G ansible && \
-    mkdir /ansible && \
-    chown -R ansible /ansible && \
-    mkdir /home/ansible/.ssh && \
-    chown -R ansible:ansible /home/ansible && \
-    chmod 700 /home/ansible/.ssh
+    mkdir -p /ansible /home/ansible/.ssh && \
+    chown -R ansible:ansible /ansible /home/ansible && \
+    chmod 700 /home/ansible/.ssh && \
+    rm -rf /var/cache/apk/* /root/.cache  # Cleanup step
 
-# Kopieer ons logo naar een standaardlocatie in de container.
-COPY img/logo.png /etc/logo.png
-
-# Kopieer ons opstartscript naar de container.
-COPY apps/entrypoint.sh /usr/local/bin/
-
-# Stel in welk script er moet worden uitgevoerd wanneer de container start.
-ENTRYPOINT ["entrypoint.sh"]
-
-# Hier beginnen we een nieuwe fase van het bouwen van de container.
-FROM base AS final
-
-# Installeer extra programma's die we nodig hebben: sudo (om opdrachten als supergebruiker uit te voeren) en openssh (voor SSH-connecties).
-RUN apk add --no-cache sudo openssh
-
-# Geef de "ansible" gebruiker toestemming om specifieke commando's uit te voeren zonder een wachtwoord in te voeren.
-RUN echo '%ansible ALL=(ALL:ALL) NOPASSWD: /bin/chown, /bin/chmod', '/bin/ping' > /etc/sudoers.d/ansible
-
-# Gebruik de "ansible" gebruiker voor de volgende commando's.
+# Switch to the non-root user 'ansible' and set the working directory.
 USER ansible
-
-# Stel in welke directory de container moet gebruiken als startpunt.
 WORKDIR /ansible
 
-# Als er geen ander commando wordt gegeven bij het starten van de container, toon dan de versie van Ansible.
-CMD ["ansible", "--version"]
+# Set the entry point for the container.
+# This is the command that will be run when the container starts.
+ENTRYPOINT ["python3", "/usr/local/bin/entrypoint.py"]

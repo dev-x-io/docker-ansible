@@ -1,6 +1,12 @@
 # Docker-Ansible 🐳
 
+[![Docker CI/CD](https://github.com/dev-x-io/docker-ansible/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-x-io/docker-ansible/actions/workflows/ci.yml)
+
 ![Dev-X.io Logo](img/logo.png)
+
+"The best way to predict the future is to invent it." - Alan Kay
+
+Current version: v0.0.1
 
 Welcome to the `docker-ansible` repository! This project aims to provide a Docker container equipped with Ansible, ready for action. Whether you're looking to test locally, develop, or simply have a standardized Ansible environment, you're in the right place!
 
@@ -9,6 +15,8 @@ Welcome to the `docker-ansible` repository! This project aims to provide a Docke
 - [Features](#features)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
+- [Build Methods Comparison](#build-methods-comparison)
+- [GitHub Actions](#github-actions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -21,32 +29,66 @@ Welcome to the `docker-ansible` repository! This project aims to provide a Docke
 
 ## Getting Started
 
-1. **Clone the Repository**:
+### Clone the Repository
 
-   ```bash
-   git clone https://github.com/dev-x-io/docker-ansible.git
-   cd docker-ansible
-   ```
+You have two options to get the source code:
 
-2. **Build the Docker Image**:
+1. **Using Git**: 
+    ```bash
+    git clone https://github.com/your_username/docker-ansible.git
+    cd docker-ansible
+    ```
 
-   ```bash
-   docker-compose build
-   ```
+2. **Downloading ZIP**: Alternatively, you can [download the ZIP file](https://github.com/your_username/docker-ansible/archive/refs/heads/main.zip) from the GitHub page.
 
-3. **Run the Container**:
+### Build the Docker Image
 
-   ```bash
-   docker-compose up
-   ```
+Choose one of the following methods to build the Docker image:
+
+1. **Using Docker Compose**: 
+    ```bash
+    docker-compose build
+    ```
+
+2. **Using Makefile**: 
+    ```bash
+    make build
+    ```
+
+### Run the Container
+
+To run the container, use one of the following methods:
+
+1. **Using Docker Compose**: 
+    ```bash
+    docker-compose up
+    ```
+
+2. **Using Makefile**: 
+    ```bash
+    make run
+    ```
 
 ## Usage
 
-If you're new to Docker or need a refresher on how to use the `docker-ansible` container, we've got you covered! Check out our [docs/USAGE.md](docs/USAGE.md) guide in the `docs/` directory. This document provides step-by-step instructions on building, running, and managing the Docker container, including how to bind your own playbooks and SSH keys.
+If you're new to Docker or need a refresher on how to use the `docker-ansible` container, don't worry, we've got you covered! Check out our [docs/USAGE.md](docs/USAGE.md) guide in the `docs/` directory. This document provides step-by-step instructions on building, running, and managing the Docker container, including how to bind your own playbooks and SSH keys.
 
-If you have specific playbooks or configurations, place them in the respective folders as detailed in the directory structure.
+### Important Note on SSH Keys
 
-Once the container is up and running, you can execute Ansible commands as you would in a typical environment. The provided `docker-compose.yml` ensures that your local Ansible directory is bound to the container, enabling real-time development and testing.
+Binding your SSH keys to the container has some security implications. Please read the relevant section in [docs/USAGE.md](docs/USAGE.md) for more information.
+
+## Build Methods Comparison
+
+| Method          | Complexity | Flexibility | Best For                    |
+|-----------------|------------|-------------|-----------------------------|
+| Docker Compose  | Easy       | Moderate    | Quick and easy setups       |
+| Makefile        | Moderate   | High        | Customizable build scenarios|
+
+## GitHub Actions
+
+Our GitHub Actions workflow automates the build and push process for our Docker images. Here's what each job does:
+
+- **Docker**: Runs on the latest version of Ubuntu and performs several tasks including setting up Docker, logging in to DockerHub, and pushing the Docker image. For more details, check the workflow YAML in the `.github/workflows/` directory.
 
 ## Contributing
 
