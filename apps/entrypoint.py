@@ -39,4 +39,4 @@ else:
     if len(sys.argv) > 1:
         subprocess.run(sys.argv[1:])
     else:
-        print("No command provided. Container is running idle.")
+        print("No command provided. Container has ended without applying your secret sauce to success.")
