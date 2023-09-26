@@ -1,8 +1,12 @@
 # Docker-Ansible 🐳
 
+[![Docker CI/CD](https://github.com/dev-x-io/docker-ansible/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-x-io/docker-ansible/actions/workflows/ci.yml)
+
 ![Dev-X.io Logo](img/logo.png)
 
 "The best way to predict the future is to invent it." - Alan Kay
+
+Current version: v0.0.1
 
 Welcome to the `docker-ansible` repository! This project aims to provide a Docker container equipped with Ansible, ready for action. Whether you're looking to test locally, develop, or simply have a standardized Ansible environment, you're in the right place!
 
