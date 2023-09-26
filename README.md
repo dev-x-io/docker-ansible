@@ -2,6 +2,8 @@
 
 ![Dev-X.io Logo](img/logo.png)
 
+"The best way to predict the future is to invent it." - Alan Kay
+
 Welcome to the `docker-ansible` repository! This project aims to provide a Docker container equipped with Ansible, ready for action. Whether you're looking to test locally, develop, or simply have a standardized Ansible environment, you're in the right place!
 
 ## Table of Contents
