@@ -37,10 +37,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Extract the name of this repository, removing any "docker-" prefix.
+      # Remove any "docker-" prefix from the repository name and set it as an environment variable
       - name: Extract Repo Name
-        id: repo_name
-        run: echo "::set-output name=image_name::$(echo ${{ github.repository }} | sed -e 's#.*/docker-##')"
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | sed -e 's#.*/docker-##')" >> $GITHUB_ENV
+
+      # Remove 'refs/tags/' from APP_VERSION and set it as an environment variable
+      - name: Set APP_VERSION
+        run: echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
 
       # Prepare Docker for more efficient builds with Buildx.
       - name: Setup Docker
@@ -78,4 +81,4 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           platforms: linux/amd64,linux/arm64
           build-args: |
-            APP_VERSION=${{ github.ref }}
+            APP_VERSION=${{ env.APP_VERSION }}
