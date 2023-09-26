@@ -1,5 +1,5 @@
 # Pin to a specific version of Alpine for reproducibility.
-FROM alpine:3.18 AS base
+FROM alpine:3.18.3 AS base
 
 # Install essential programs in a single RUN statement to minimize layers.
 RUN apk add --no-cache python3 py3-pip ansible git nmap
