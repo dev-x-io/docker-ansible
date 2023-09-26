@@ -25,6 +25,7 @@ on:
       - './Makefile'       # Negeer de Makefile
     branches:
       - main
+      - release/*
 
 # De daadwerkelijke taken die worden uitgevoerd.
 jobs:
