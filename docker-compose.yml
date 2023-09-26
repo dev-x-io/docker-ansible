@@ -1,17 +1,16 @@
-version: '3.8'  # Versie van de Docker Compose specificatie die we gebruiken.
+version: '3.8'  # Version of Docker Compose specification used.
 
 services:
-  ansible-container:  # De naam van onze service.
+  ansible-container:  # Name of the service.
     build: 
-      context: .  # Het pad naar de directory die de Dockerfile en de broncode bevat.
-      dockerfile: Dockerfile  # De naam van het Dockerfile.
-    image: ${DOCKERHUB_USERNAME}/repository:latest  # De naam van de image die we willen bouwen. 
-                                                   # Vervang 'repository' door de gewenste naam van je DockerHub-repository.
+      context: .  # Path to the directory containing the Dockerfile and source code.
+      dockerfile: Dockerfile  # Name of the Dockerfile.
+    image: ${DOCKERHUB_USERNAME}/repository:latest  # Name of the Docker image. Replace 'repository' with the desired name for your DockerHub repository.
     volumes:
-      - ./ansible:/ansible  # Koppel de lokale "ansible" directory naar de "/ansible" directory in de container.
-      - ~/.ssh:/home/ansible/.ssh:ro  # Koppel de lokale SSH-sleutels naar de container (alleen-lezen modus).
+      - ./ansible:/ansible  # Bind the local "ansible" directory to the "/ansible" directory in the container.
+      - ~/.ssh/ansible:/home/ansible/.ssh  # Bind local SSH keys to the container.
     environment:
-      - ANSIBLE_HOST_KEY_CHECKING=False  # Om te voorkomen dat Ansible vraagt of je zeker weet dat je wilt verbinden met een onbekende host.
-    command: ["ansible", "--version"]  # Het standaardcommando om uit te voeren wanneer de container start.
+      - ANSIBLE_HOST_KEY_CHECKING=False  # To prevent Ansible from asking to confirm connection with an unknown host.
+    command: ["ansible", "--version"]  # Default command to execute when the container starts.
 
-# Hier kun je netwerken, volumes en andere top-level configuraties toevoegen indien nodig.
+# Here you can add networks, volumes, and other top-level configurations if needed.

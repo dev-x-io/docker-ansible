@@ -1,60 +1,60 @@
-# De naam van onze geautomatiseerde taak.
+# Name of our automated workflow.
 name: Docker CI/CD
 
-# De gebeurtenissen die deze taak starten.
+# Events that trigger this workflow.
 on:
-  # Als er iets wordt "gepusht" naar de "main" tak of als er een nieuwe versie-tag wordt toegevoegd.
+  # Triggered when code is pushed to the "main" or "develop" branches or when a new version tag is added.
   push:
     paths-ignore:
-      - '**.md'          # Negeer alle markdown bestanden
-      - './docs/**'        # Negeer alle bestanden in de 'docs' map
-      - './img/**'         # Negeer alle bestanden in de 'img' map
-      - './Makefile'       # Negeer de Makefile
+      - '**.md'          # Ignore all markdown files
+      - './docs/**'      # Ignore all files in the 'docs' folder
+      - './img/**'       # Ignore all files in the 'img' folder
+      - './Makefile'     # Ignore the Makefile
     branches:
       - main
       - develop
     tags:
-      - 'v*.*.*' # Bijvoorbeeld v1.2.3
+      - 'v*.*.*'         # E.g., v1.2.3
 
-  # Als er een wijzigingsverzoek (pull request) is naar de "main" tak.
+  # Triggered when a pull request is made to the "main" or "release/*" branches.
   pull_request:
     paths-ignore:
-      - '**.md'          # Negeer alle markdown bestanden
-      - './docs/**'        # Negeer alle bestanden in de 'docs' map
-      - './img/**'         # Negeer alle bestanden in de 'img' map
-      - './Makefile'       # Negeer de Makefile
+      - '**.md'          # Ignore all markdown files
+      - './docs/**'      # Ignore all files in the 'docs' folder
+      - './img/**'       # Ignore all files in the 'img' folder
+      - './Makefile'     # Ignore the Makefile
     branches:
       - main
       - release/*
 
-# De daadwerkelijke taken die worden uitgevoerd.
+# Actual tasks to be performed.
 jobs:
   docker:
-    # Deze taak wordt uitgevoerd op een virtuele machine met het nieuwste Ubuntu-besturingssysteem.
+    # This job runs on a virtual machine with the latest Ubuntu OS.
     runs-on: ubuntu-latest
     steps:
-      # Haal de code van de huidige repository op.
-      - name: Haal de code op
+      # Checkout the code from the current repository.
+      - name: Checkout Code
         uses: actions/checkout@v2
 
-      # Verkrijg de naam van deze repository zonder het "docker-" voorvoegsel.
-      - name: Haal de naam van de repository op
+      # Extract the name of this repository, removing any "docker-" prefix.
+      - name: Extract Repo Name
         id: repo_name
         run: echo "::set-output name=image_name::$(echo ${{ github.repository }} | sed -e 's#.*/docker-##')"
 
-      # Bereid Docker voor om efficiëntere builds te gebruiken met "Buildx".
-      - name: Bereid Docker voor
+      # Prepare Docker for more efficient builds with Buildx.
+      - name: Setup Docker
         uses: docker/setup-buildx-action@v1
 
-      # Log in bij DockerHub (een website waar Docker-images worden opgeslagen) met een geheime gebruikersnaam en wachtwoord.
-      - name: Log in bij DockerHub
+      # Log in to DockerHub with secret username and password.
+      - name: DockerHub Login
         uses: docker/login-action@v1 
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Bepaal de naam en tags voor onze Docker-image.
-      - name: Set up Docker Meta
+      # Define the name and tags for our Docker image.
+      - name: Setup Docker Meta
         id: meta
         uses: docker/metadata-action@v3
         with:
@@ -65,12 +65,12 @@ jobs:
             type=ref,event=branch,value=latest
             type=sha,format=short
 
-      # Bouw een nieuwe Docker-image met onze code en "push" (upload) deze naar DockerHub.
-      - name: Bouw en upload de Docker-image
+      # Build and push the Docker image to DockerHub.
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
           context: .
-          # We "pushen" (uploaden) alleen als het geen wijzigingsverzoek is, of als het een nieuwe versie-tag heeft.
+          # We push the image only if it's not a pull request, or if it's a new version tag.
           push: ${{ github.event_name != 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: |
