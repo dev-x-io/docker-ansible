@@ -11,8 +11,8 @@ on:
       - main
       - develop
       - 'feature/**'
-      - 'bugfix/**'
-      - 'hotfix/**'
+      # - 'bugfix/**'
+      # - 'hotfix/**'
       - 'release/**'
     tags:
       - 'v*.*.*'
@@ -40,23 +40,45 @@ jobs:
 
       - name: Set APP_VERSION
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
-            echo "APP_VERSION=*.*.*-alpha" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/develop ]]; then
-            echo "APP_VERSION=develop" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/feature/* ]]; then
-            echo "APP_VERSION=feature-$(echo ${{ github.ref }} | sed -e 's#refs/heads/feature/##')" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/bugfix/* ]]; then
-            echo "APP_VERSION=bugfix-$(echo ${{ github.ref }} | sed -e 's#refs/heads/bugfix/##')" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/hotfix/* ]]; then
-            echo "APP_VERSION=hotfix-$(echo ${{ github.ref }} | sed -e 's#refs/heads/hotfix/##')" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
-            echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/heads/release/##')-beta" >> $GITHUB_ENV
-          else
-            echo "APP_VERSION=unspecified" >> $GITHUB_ENV
-          fi
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ORIGINAL_BRANCH=${{ github.event.pull_request.head.ref }}
+            # Now, based on ORIGINAL_BRANCH, set APP_VERSION
+            case "$ORIGINAL_BRANCH" in
+              release/v*)
+                echo "APP_VERSION=$(echo $ORIGINAL_BRANCH | sed -e 's#release/v##')-beta" >> $GITHUB_ENV
+                ;;
+              *)
+                echo "APP_VERSION=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+                ;;
+            esac
+          else  # For push events
+            case "${{ github.ref }}" in
+              refs/tags/*)
+                echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
+                ;;
+              refs/heads/main)
+                echo "APP_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))-alpha" >> $GITHUB_ENV
+                ;;
+              refs/heads/develop)
+                echo "APP_VERSION=develop" >> $GITHUB_ENV
+                ;;
+              refs/heads/feature/*)
+                echo "APP_VERSION=feature-$(echo ${{ github.ref }} | sed -e 's#refs/heads/feature/##')" >> $GITHUB_ENV
+                ;;
+              refs/heads/bugfix/*)
+                echo "APP_VERSION=bugfix-$(echo ${{ github.ref }} | sed -e 's#refs/heads/bugfix/##')" >> $GITHUB_ENV
+                ;;
+              refs/heads/hotfix/*)
+                echo "APP_VERSION=hotfix-$(echo ${{ github.ref }} | sed -e 's#refs/heads/hotfix/##')" >> $GITHUB_ENV
+                ;;
+              refs/heads/release/*)
+                echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/heads/release/##')-beta" >> $GITHUB_ENV
+                ;;
+              *)
+                echo "APP_VERSION=unknown" >> $GITHUB_ENV
+                ;;
+            esac
+          fi      
 
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
