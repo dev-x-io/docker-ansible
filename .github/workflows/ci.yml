@@ -24,7 +24,6 @@ on:
       - './img/**'
       - './Makefile'
     branches:
-      - main
       - develop
       - 'release/**'
       - 'hotfix/**'
