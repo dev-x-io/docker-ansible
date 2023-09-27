@@ -17,7 +17,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          MY_GITHUB_TOKEN: ${{ env.MY_GITHUB_TOKEN }}
+          MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh auth login --with-token $MY_GITHUB_TOKEN
           case "${{ github.ref }}" in
