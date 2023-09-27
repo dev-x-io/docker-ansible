@@ -43,7 +43,11 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
-            echo "APP_VERSION=*.*.*-alpha" >> $GITHUB_ENV
+            if [[ "${{ github.event.pull_request.head.ref }}" == release/v* ]]; then
+              echo "APP_VERSION=$(echo ${{ github.event.pull_request.head.ref }} | sed -e 's#release/v##')-beta" >> $GITHUB_ENV
+            else
+              echo "APP_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))-alpha" >> $GITHUB_ENV
+            fi
           elif [[ "${{ github.ref }}" == refs/heads/develop ]]; then
             echo "APP_VERSION=develop" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == refs/heads/feature/* ]]; then
