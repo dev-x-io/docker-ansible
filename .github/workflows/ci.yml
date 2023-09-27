@@ -1,6 +1,5 @@
 name: Docker CI/CD
 
-
 on:
   push:
     paths-ignore:
