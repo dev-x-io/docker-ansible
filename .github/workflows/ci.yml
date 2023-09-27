@@ -97,7 +97,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.APP_VERSION }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.APP_VERSION }}
+            ${{ if eq github.event_name 'push' }}${{ if eq github.ref_type 'tag' }}${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:latest${{ end }}${{ end }}    
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
           platforms: linux/amd64,linux/arm64

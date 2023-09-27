@@ -6,7 +6,7 @@
 
 "The best way to predict the future is to invent it." - Alan Kay
 
-Current version: v0.0.6
+Current version: v0.0.5
 
 Welcome to the `docker-ansible` repository! This project aims to provide a Docker container equipped with Ansible, ready for action. Whether you're looking to test locally, develop, or simply have a standardized Ansible environment, you're in the right place!
 
