@@ -57,7 +57,7 @@ jobs:
           else  # For push events
             case "${{ github.ref }}" in
               refs/tags/*)
-                echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
+                echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/v##')" >> $GITHUB_ENV
                 ;;
               refs/heads/main)
                 echo "APP_VERSION=latest-alpha" >> $GITHUB_ENV
