@@ -12,7 +12,8 @@ on:
       - main
       - develop
       - 'feature/**'
-      # - 'bugfix/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
       - 'release/**'
     tags:
       - 'v*.*.*'
@@ -26,7 +27,6 @@ on:
     branches:
       - develop
       - 'release/**'
-      - 'hotfix/**'
 
 jobs:
   docker:
@@ -97,9 +97,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.APP_VERSION }}
-            ${{ if eq github.event_name 'push' }}${{ if eq github.ref_type 'tag' }}${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:latest${{ end }}${{ end }}    
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}:${{ env.APP_VERSION }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
           platforms: linux/amd64,linux/arm64
