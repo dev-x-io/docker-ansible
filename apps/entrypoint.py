@@ -15,32 +15,34 @@ container_version = os.environ.get('APP_VERSION', 'v0.0.0')
 
 # Check for the presence of an Ansible 'requirements.yml' file.
 if os.path.isfile("requirements.yml"):
-    # If the file exists, install the roles listed in it using 'ansible-galaxy'.
     subprocess.run(["ansible-galaxy", "install", "-r", "requirements.yml", "-p", "/ansible/roles"])
 
 # Check if SSH key files are present in the container.
 if not os.path.isfile("/home/ansible/.ssh/id_rsa") or not os.path.isfile("/home/ansible/.ssh/id_rsa.pub"):
-    # No SSH keys found. We're in "test mode".
     font = figlet_format(f'Testrun {container_version}', font='slant')
     print(font)
     print('SSH keys are absent. Running on localhost powdered milk today!\n')
 else:
-    # SSH keys found. Set the correct ownership and permissions.
-    subprocess.run(["sudo", "chown", "-R", "ansible:ansible", "/home/ansible/.ssh"])  # Change ownership to 'ansible' user.
-    subprocess.run(["sudo", "chmod", "600", "/home/ansible/.ssh/*"])  # Set private keys to be read-only by the owner.
-    subprocess.run(["sudo", "chmod", "644", "/home/ansible/.ssh/*.pub"])  # Set public keys to be readable by everyone.
+    subprocess.run(["sudo", "chown", "-R", "ansible:ansible", "/home/ansible/.ssh"])
+    subprocess.run(["sudo", "chmod", "600", "/home/ansible/.ssh/*"])
+    subprocess.run(["sudo", "chmod", "644", "/home/ansible/.ssh/*.pub"])
 
-# Check for a '--deliver-shell' argument when starting the container.
+# Check for '--deliver-shell' argument.
 if '--deliver-shell' in sys.argv:
-    # Load and pretty-print the JSON structure from 'commands.json'.
     with open('commands.json', 'r') as file:
         commands = json.load(file)
     print(json.dumps(commands, indent=4))
     print("Delivering shell")
-    subprocess.run(["/bin/bash"])  # Start a shell session.
+    subprocess.run(["/bin/bash"])
 else:
-    # If a command is provided, execute it. Otherwise, print a message and exit.
+    # If a command is provided, execute it.
     if len(sys.argv) > 1:
-        subprocess.run(sys.argv[1:])
+        command = sys.argv[1]
+        args = sys.argv[2:]
+        try:
+            subprocess.run([command] + args)
+        except FileNotFoundError as e:
+            print(f"An error occurred: {e}")
+            print(f"Could not find command: {command}")
     else:
         print("No command provided. Container has ended without applying your secret sauce to success.")
