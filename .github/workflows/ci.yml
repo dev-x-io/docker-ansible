@@ -60,7 +60,7 @@ jobs:
                 echo "APP_VERSION=$(echo ${{ github.ref }} | sed -e 's#refs/tags/##')" >> $GITHUB_ENV
                 ;;
               refs/heads/main)
-                echo "APP_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))-alpha" >> $GITHUB_ENV
+                echo "APP_VERSION=latest-alpha" >> $GITHUB_ENV
                 ;;
               refs/heads/develop)
                 echo "APP_VERSION=develop" >> $GITHUB_ENV
