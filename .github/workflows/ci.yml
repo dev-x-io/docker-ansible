@@ -1,5 +1,6 @@
 name: Docker CI/CD
 
+
 on:
   push:
     paths-ignore:
@@ -11,22 +12,22 @@ on:
       - main
       - develop
       - 'feature/**'
-      - 'bugfix/**'
+      # - 'bugfix/**'
       - 'release/**'
-      tags:
-        - 'v*.*.*'
-        
-        pull_request:
-          paths-ignore:
-            - '**.md'
-            - './docs/**'
-            - './img/**'
-            - './Makefile'
-            branches:
-              - main
-              - develop
-              - 'release/**'
-              - 'hotfix/**'
+    tags:
+      - 'v*.*.*'
+
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - './docs/**'
+      - './img/**'
+      - './Makefile'
+    branches:
+      - main
+      - develop
+      - 'release/**'
+      - 'hotfix/**'
 
 jobs:
   docker:
