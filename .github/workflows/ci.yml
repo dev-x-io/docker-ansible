@@ -11,22 +11,22 @@ on:
       - main
       - develop
       - 'feature/**'
-      # - 'bugfix/**'
-      # - 'hotfix/**'
+      - 'bugfix/**'
       - 'release/**'
-    tags:
-      - 'v*.*.*'
-
-  pull_request:
-    paths-ignore:
-      - '**.md'
-      - './docs/**'
-      - './img/**'
-      - './Makefile'
-    branches:
-      - main
-      - develop
-      - 'release/**'
+      tags:
+        - 'v*.*.*'
+        
+        pull_request:
+          paths-ignore:
+            - '**.md'
+            - './docs/**'
+            - './img/**'
+            - './Makefile'
+            branches:
+              - main
+              - develop
+              - 'release/**'
+              - 'hotfix/**'
 
 jobs:
   docker:
@@ -46,6 +46,9 @@ jobs:
             case "$ORIGINAL_BRANCH" in
               release/v*)
                 echo "APP_VERSION=$(echo $ORIGINAL_BRANCH | sed -e 's#release/v##')-beta" >> $GITHUB_ENV
+                ;;
+              hotfix/v*)
+                echo "APP_VERSION=$(echo $ORIGINAL_BRANCH | sed -e 's#hotfix/v##')-beta" >> $GITHUB_ENV
                 ;;
               *)
                 echo "APP_VERSION=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
