@@ -1,0 +1,30 @@
+# Workflow for Creating Hotfix Branch
+name: Create Hotfix Branch
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - './docs/**'
+      - './img/**'
+      - './Makefile'
+
+jobs:
+  hotfix-branch:
+    if: "contains(github.event.head_commit.message, 'hotfix/')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Hotfix Branch
+        run: |
+          HOTFIX_VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -o 'hotfix/v[0-9]\+\.[0-9]\+\.[0-9]\+')
+          HOTFIX_VERSION=${HOTFIX_VERSION#hotfix/}
+          git checkout -b hotfix/$HOTFIX_VERSION
+          git push origin hotfix/$HOTFIX_VERSION
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
