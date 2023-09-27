@@ -13,18 +13,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Octokit
+        run: npm install @octokit/rest
 
       - name: Create Pull Request
         env:
-          MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
-          gh auth login --with-token $MY_GITHUB_TOKEN
-          case "${{ github.ref }}" in
-            refs/heads/feature/*|refs/heads/bugfix/*)
-              gh pr create --base develop --head ${{ github.ref }} --title "Automated PR from ${{ github.ref }}" --body "This is an automated pull request."
-              ;;
-            refs/heads/hotfix/*|refs/heads/release/*)
-              gh pr create --base main --head ${{ github.ref }} --title "Automated PR from ${{ github.ref }}" --body "This is an automated pull request."
-              ;;
-          esac
+          const { Octokit } = require("@octokit/rest");
+          const octokit = new Octokit({ auth: process.env.MY_GITHUB_TOKEN });
+
+          // Define the base and head branches based on your logic
+          let baseBranch, headBranch;
+          switch (${github.ref}) {
+            case 'refs/heads/feature/*':
+            case 'refs/heads/bugfix/*':
+              baseBranch = 'develop';
+              headBranch = ${github.ref};
+              break;
+            case 'refs/heads/hotfix/*':
+            case 'refs/heads/release/*':
+              baseBranch = 'main';
+              headBranch = ${github.ref};
+              break;
+            default:
+              console.log('No pull request created for this branch.');
+              return;
+          }
+
+          // Create the pull request
+          const response = await octokit.pulls.create({
+            owner: '${{ github.repository_owner }}',
+            repo: '${{ github.repository }}',
+            base: baseBranch,
+            head: headBranch,
+            title: `Automated PR from ${github.ref}`,
+            body: 'This is an automated pull request.',
+          });
+
+          console.log(`Pull request created: ${response.data.html_url}`);
