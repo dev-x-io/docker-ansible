@@ -5,7 +5,6 @@ import os
 import sys
 import subprocess
 import json
-from pyfiglet import figlet_format
 
 # Fetch the APP_VERSION environment variable. If not set, default to 'v0.0.0'.
 container_version = os.environ.get('APP_VERSION', 'v0.0.0')
@@ -19,8 +18,7 @@ if os.path.isfile("requirements.yml"):
 
 # Check if SSH key files are present in the container.
 if not os.path.isfile("/home/ansible/.ssh/id_rsa") or not os.path.isfile("/home/ansible/.ssh/id_rsa.pub"):
-    font = figlet_format(f'Testrun {container_version}', font='slant')
-    print(font)
+    print(f'Testrun {container_version}')
     print('SSH keys are absent. Running on localhost powdered milk today!\n')
 else:
     subprocess.run(["sudo", "chown", "-R", "ansible:ansible", "/home/ansible/.ssh"])
@@ -37,12 +35,12 @@ if '--deliver-shell' in sys.argv:
 else:
     # If a command is provided, execute it.
     if len(sys.argv) > 1:
-        command = sys.argv[1]
-        args = sys.argv[2:]
+        args_list = sys.argv[1].split()  # Assume the command is the first argument and split it into a list.
+        print(f"Executing command: {args_list}")
         try:
-            subprocess.run([command] + args)
+            subprocess.run(args_list)
         except FileNotFoundError as e:
             print(f"An error occurred: {e}")
-            print(f"Could not find command: {command}")
+            print(f"Could not find command: {args_list[0]}")
     else:
         print("No command provided. Container has ended without applying your secret sauce to success.")
