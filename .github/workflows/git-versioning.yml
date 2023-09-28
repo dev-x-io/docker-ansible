@@ -38,6 +38,69 @@ jobs:
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
+# Versioning strategy based on PR labels
+      - name: Fetch PR Labels
+        id: fetch_pr_labels
+        run: |
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
+          | jq -r 'map(.name) | join(",")')
+          echo "PR Labels: $labels"
+          echo "pr_labels=$labels" >> $GITHUB_ENV
+          shell: bash
+          # Calculate and display new version
+          - name: Calculate and Display New Version
+          id: calculate_version
+          run: |
+          # Fetch the existing MAJOR, MINOR, and PATCH versions from environment variables
+          MAJOR=${{ env.major_version }}
+          MINOR=${{ env.minor_version }}
+          PATCH=${{ env.patch_version }}
+          pr_labels=${{ env.pr_labels }}
+          
+          # Allow non-zero exit code for the next commands
+          set +e
+          
+          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
+          if [[ "$pr_labels" == *"major"* ]]; then
+          ((MAJOR++))
+          MINOR=0
+          PATCH=0
+          elif [[ "$pr_labels" == *"feature"* ]]; then
+          ((MINOR++))
+          PATCH=0
+          elif [[ "$pr_labels" == *"bugfix"* ]]; then
+          ((PATCH++))
+          fi
+          
+          # Revert to default behavior of failing on non-zero exit code
+          set -e
+          
+          # Display the new version for debugging
+          new_version="v$MAJOR.$MINOR.$PATCH"
+          echo "New Version: $new_version"
+          shell: bash
+
+      - name: Debug and Fetch Open PRs and Predict Next Version
+        id: predict_next_version
+        run: |
+          # Print the current MAJOR, MINOR, and PATCH for debugging
+          echo "Current Version: v$MAJOR.$MINOR.$PATCH"
+
+          # Fetch all open PRs against 'develop'
+          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop")
+
+          # Print the fetched PRs for debugging
+          echo "Fetched Open PRs: $open_prs"
+
+          # Parse the labels from the fetched PRs
+          parsed_labels=$(echo "$open_prs" | jq -r '.[] | .labels[].name')
+          echo "Parsed Labels: $parsed_labels"
+
+          # ... (rest of your logic)
+        shell: bash
 # Predictive versioning based on open PRs
       - name: Fetch Open PRs and Predict Next Version
         id: predict_next_version
@@ -68,51 +131,8 @@ jobs:
           predicted_version="v$MAJOR.$next_minor.$next_patch"
           echo "Predicted Next Version (if all open PRs are merged): $predicted_version"
         shell: bash
-# Versioning strategy based on PR labels
-      - name: Fetch PR Labels
-        id: fetch_pr_labels
-        run: |
-          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
-                  | jq -r 'map(.name) | join(",")')
-          echo "PR Labels: $labels"
-          echo "pr_labels=$labels" >> $GITHUB_ENV
-        shell: bash
-# Calculate and display new version
-      - name: Calculate and Display New Version
-        id: calculate_version
-        run: |
-          # Fetch the existing MAJOR, MINOR, and PATCH versions from environment variables
-          MAJOR=${{ env.major_version }}
-          MINOR=${{ env.minor_version }}
-          PATCH=${{ env.patch_version }}
-          pr_labels=${{ env.pr_labels }}
-
-          # Allow non-zero exit code for the next commands
-          set +e
-
-          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
-          if [[ "$pr_labels" == *"major"* ]]; then
-            ((MAJOR++))
-            MINOR=0
-            PATCH=0
-          elif [[ "$pr_labels" == *"feature"* ]]; then
-            ((MINOR++))
-            PATCH=0
-          elif [[ "$pr_labels" == *"bugfix"* ]]; then
-            ((PATCH++))
-          fi
-
-          # Revert to default behavior of failing on non-zero exit code
-          set -e
-
-          # Display the new version for debugging
-          new_version="v$MAJOR.$MINOR.$PATCH"
-          echo "New Version: $new_version"
-        shell: bash
         
-# jobs:
+        # jobs:
 #   versioning_and_merge:
 #     runs-on: ubuntu-latest
 #     steps:
