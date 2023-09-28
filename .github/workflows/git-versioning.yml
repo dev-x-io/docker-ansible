@@ -37,36 +37,32 @@ jobs:
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
 
-      # Fetch all open PRs against 'develop' and count features and bugfixes
-      - name: Fetch and Count Open PRs
-        id: count_open_prs
+      # Fetch PR Labels and Count Features/Bugfixes
+      - name: Fetch PR Labels and Count
+        id: fetch_pr_labels_and_count
         run: |
-          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop" \
-                    | jq -r '.[] | .labels[].name')
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
+          | jq -r 'map(.name) | join(",")')
+          
           feature_count=0
           bugfix_count=0
-          for label in $open_prs; do
+          for label in $(echo $labels | tr "," "\n"); do
             if [[ "$label" == "feature" ]]; then
               ((feature_count++))
             elif [[ "$label" == "bugfix" ]]; then
               ((bugfix_count++))
             fi
           done
+
+          echo "PR Labels: $labels"
+          echo "Feature Count: $feature_count"
+          echo "Bugfix Count: $bugfix_count"
+          
+          echo "pr_labels=$labels" >> $GITHUB_ENV
           echo "feature_count=$feature_count" >> $GITHUB_ENV
           echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
-        shell: bash
-
-      # Fetch PR Labels
-      - name: Fetch PR Labels
-        id: fetch_pr_labels
-        run: |
-          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
-          | jq -r 'map(.name) | join(",")')
-          echo "PR Labels: $labels"
-          echo "pr_labels=$labels" >> $GITHUB_ENV
         shell: bash
 
       # Calculate and display new version
