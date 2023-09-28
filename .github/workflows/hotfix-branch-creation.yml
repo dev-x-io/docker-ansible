@@ -1,6 +1,9 @@
 # Workflow for Creating Hotfix Branch
 name: Create Hotfix Branch
 
+env:
+    MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+  
 on:
   push:
     branches:
@@ -27,4 +30,4 @@ jobs:
           git push origin hotfix/$HOTFIX_VERSION
 
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
