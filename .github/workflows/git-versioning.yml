@@ -42,46 +42,49 @@ jobs:
         shell: bash
 
 # Versioning strategy based on PR labels
-      - name: Fetch PR Labels
-        id: fetch_pr_labels
+      - name: Fetch PR Labels or Base Branch
+        id: fetch_pr_info
         run: |
           pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          base_ref=$(jq --raw-output .pull_request.base.ref "$GITHUB_EVENT_PATH")
           labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
           | jq -r 'map(.name) | join(",")')
-          echo "PR Labels: $labels"
-          echo "pr_labels=$labels" >> $GITHUB_ENV
+          
+          if [ -z "$labels" ]; then
+            echo "Using base_ref for versioning: $base_ref"
+            echo "base_ref=$base_ref" >> $GITHUB_ENV
+          else
+            echo "Using PR Labels for versioning: $labels"
+            echo "pr_labels=$labels" >> $GITHUB_ENV
+          fi
         shell: bash
 
 # Calculate and display new version
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
-          # Fetch the existing MAJOR, MINOR, and PATCH versions from environment variables
           MAJOR=${{ env.major_version }}
           MINOR=${{ env.minor_version }}
           PATCH=${{ env.patch_version }}
           pr_labels=${{ env.pr_labels }}
+          base_ref=${{ env.base_ref }}
           
-          # Allow non-zero exit code for the next commands
-          set +e
+          set +e  # Allow non-zero exit code for the next commands
           
-          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
-          if [[ "$pr_labels" == *"major"* ]]; then
-          ((MAJOR++))
-          MINOR=0
-          PATCH=0
-          elif [[ "$pr_labels" == *"feature"* ]]; then
-          ((MINOR++))
-          PATCH=0
-          elif [[ "$pr_labels" == *"bugfix"* ]]; then
-          ((PATCH++))
+          if [[ "$pr_labels" == *"major"* || "$base_ref" == "feature/major"* ]]; then
+            ((MAJOR++))
+            MINOR=0
+            PATCH=0
+          elif [[ "$pr_labels" == *"feature"* || "$base_ref" == "feature/"* ]]; then
+            ((MINOR++))
+            PATCH=0
+          elif [[ "$pr_labels" == *"bugfix"* || "$base_ref" == "bugfix/"* ]]; then
+            ((PATCH++))
           fi
-          
-          # Revert to default behavior of failing on non-zero exit code
-          set -e
-          
-          # Display the new version for debugging
+
+          set -e  # Revert to default behavior of failing on non-zero exit code
+
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash

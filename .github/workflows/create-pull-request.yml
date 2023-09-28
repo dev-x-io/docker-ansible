@@ -15,37 +15,49 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Create Pull Request
+      - name: Create and Label Pull Request
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: ${{ github.ref }}
         run: |
           # Define the base and head branches based on your logic
-          if [[ "$GITHUB_REF" == "refs/heads/feature/"* || "$GITHUB_REF" == "refs/heads/bugfix/"* ]]; then
-          BASE_BRANCH="develop"
+          LABEL=""
+          if [[ "$GITHUB_REF" == "refs/heads/feature/"* ]]; then
+            BASE_BRANCH="develop"
+            LABEL="feature"
+          elif [[ "$GITHUB_REF" == "refs/heads/bugfix/"* ]]; then
+            BASE_BRANCH="develop"
+            LABEL="bugfix"
           elif [[ "$GITHUB_REF" == "refs/heads/hotfix/"* || "$GITHUB_REF" == "refs/heads/release/"* ]]; then
-          BASE_BRANCH="main"
+            BASE_BRANCH="main"
+            LABEL="hotfix"
           else
-          echo "No pull request created for this branch."
-          exit 0
+            echo "No pull request created for this branch."
+            exit 0
           fi
    
           TITLE="Automated PR from $GITHUB_REF"
           BODY="This is an automated pull request."
 
           # Create the pull request using the GitHub API
-          RESPONSE=$(curl -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
+          RESPONSE=$(curl -s -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
             "title": "'"$TITLE"'",
             "body": "'"$BODY"'",
             "head": "'"$GITHUB_REF"'",
             "base": "'"$BASE_BRANCH"'"
           }' "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls")
 
-          # Check if the pull request was created successfully
-          PR_URL=$(echo "$RESPONSE" | jq -r '.html_url')
-          if [ -n "$PR_URL" ]; then
-            echo "Pull request created: $PR_URL"
+          # Extract the PR number from the response
+          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.number')
+
+          # Add the label to the PR
+          if [ -n "$PR_NUMBER" ]; then
+            curl -s -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
+              "labels": ["'"$LABEL"'"]
+            }' "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER"
+
+            echo "Pull request $PR_NUMBER created and labeled with $LABEL."
           else
             echo "Failed to create pull request."
             exit 1
