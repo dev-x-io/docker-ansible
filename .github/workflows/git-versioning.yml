@@ -11,9 +11,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
 # Install requirements
       - name: Install jq
         run: sudo apt-get install -y jq
+
 # Get the latest tag
       - name: Get Latest Tag using GitHub API
         id: get_latest_tag
@@ -38,6 +40,7 @@ jobs:
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
+
 # Versioning strategy based on PR labels
       - name: Fetch PR Labels
         id: fetch_pr_labels
@@ -49,10 +52,11 @@ jobs:
           echo "PR Labels: $labels"
           echo "pr_labels=$labels" >> $GITHUB_ENV
           shell: bash
-          # Calculate and display new version
-          - name: Calculate and Display New Version
-          id: calculate_version
-          run: |
+
+# Calculate and display new version
+      - name: Calculate and Display New Version
+        id: calculate_version
+        run: |
           # Fetch the existing MAJOR, MINOR, and PATCH versions from environment variables
           MAJOR=${{ env.major_version }}
           MINOR=${{ env.minor_version }}
@@ -80,30 +84,39 @@ jobs:
           # Display the new version for debugging
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
-          shell: bash
-# Debug and fetch open PRs
-      - name: Debug and Fetch Open PRs and Predict Next Version
-        id: debug_predict_next_version
-        run: |
-          # Print the current MAJOR, MINOR, and PATCH for debugging
-          echo "Current Version: v$MAJOR.$MINOR.$PATCH"
-
-          # Fetch all open PRs against 'develop'
-          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop")
-
-          # Print the fetched PRs for debugging
-          echo "Fetched Open PRs: $open_prs"
-
-          # Parse the labels from the fetched PRs
-          parsed_labels=$(echo "$open_prs" | jq -r '.[] | .labels[].name')
-          echo "Parsed Labels: $parsed_labels"
-
-          # ... (rest of your logic)
         shell: bash
+
+
+      - name: Calculate and Display New Version
+        id: calculate_version
+        run: |
+          MAJOR=${{ env.major_version }}
+          MINOR=${{ env.minor_version }}
+          PATCH=${{ env.patch_version }}
+          pr_labels=${{ env.pr_labels }}
+          
+          set +e  # Allow non-zero exit code for the next commands
+          
+          if [[ "$pr_labels" == *"major"* ]]; then
+            ((MAJOR++))
+            MINOR=0
+            PATCH=0
+          elif [[ "$pr_labels" == *"feature"* ]]; then
+            ((MINOR++))
+            PATCH=0
+          elif [[ "$pr_labels" == *"bugfix"* ]]; then
+            ((PATCH++))
+          fi
+
+          set -e  # Revert to default behavior of failing on non-zero exit code
+
+          new_version="v$MAJOR.$MINOR.$PATCH"
+          echo "New Version: $new_version"
+        shell: bash  
+
 # Predictive versioning based on open PRs
       - name: Fetch Open PRs and Predict Next Version
-        id: predict_next_version
+        id: debug_predict_next_version
         run: |
           # Fetch all open PRs against 'develop'
           open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
@@ -132,77 +145,3 @@ jobs:
           echo "Predicted Next Version (if all open PRs are merged): $predicted_version"
         shell: bash
         
-        # jobs:
-#   versioning_and_merge:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-
-#       - name: Get Latest Tag using GitHub API
-#         id: get_latest_tag
-#         run: |
-#           # Use GitHub API to fetch the latest tag and save it to a temporary file for debugging
-#           curl -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-#               -H "Accept: application/vnd.github.v3+json" \
-#               "https://api.github.com/repos/${{ github.repository }}/tags" \
-#               > /tmp/latest_tag.json
-          
-#           # Display the content of the temporary file for debugging
-#           cat /tmp/latest_tag.json
-          
-#           # Extract the latest tag from the temporary file using jq
-#           latest_tag=$(jq -r '.[0].name' /tmp/latest_tag.json)
-          
-#           # Parse the MAJOR, MINOR, and PATCH versions from the tag
-#           if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-#             major_version="${BASH_REMATCH[1]}"
-#             minor_version="${BASH_REMATCH[2]}"
-#             patch_version="${BASH_REMATCH[3]}"
-#           else
-#             echo "Failed to parse the latest tag version."
-#             exit 1
-#           fi
-      
-#           echo "major_version=$major_version" >> $GITHUB_ENV
-#           echo "minor_version=$minor_version" >> $GITHUB_ENV
-#           echo "patch_version=$patch_version" >> $GITHUB_ENV
-#         shell: bash      
-
-#       - name: Get Latest Commit Message
-#         id: get_latest_commit
-#         run: echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
-#         shell: bash
-
-#       - name: Calculate Version
-#         id: calculate_version
-#         run: |
-#           latest_commit_message=${{ env.commit_message }}
-
-#           # Increment MAJOR version if latest commit message contains "do-major-update"
-#           if [[ "$latest_commit_message" == *"do-major-update"* ]]; then
-#             ((MAJOR++))
-#           fi
-
-#           # Calculate the number of merged feature PRs since the last tag
-#           MINOR_ADD=$(git log $(git describe --tags --abbrev=0)..HEAD --pretty=%B | grep -o 'Merge pull request' | grep -c 'feature')
-
-#           # Calculate the number of merged bugfix PRs since the last tag
-#           PATCH_ADD=$(git log $(git describe --tags --abbrev=0)..HEAD --pretty=%B | grep -o 'Merge pull request' | grep -c 'bugfix')
-
-#           # Increment MINOR and PATCH based on these numbers
-#           ((MINOR+=MINOR_ADD))
-#           ((PATCH+=PATCH_ADD))
-
-#           # Set the new version using the GitHub API
-#           token="${{ secrets.MY_GITHUB_TOKEN }}"
-#           repo="${{ github.repository }}"
-#           new_version="v$MAJOR.$MINOR.$PATCH"
-#           url="https://api.github.com/repos/$repo/actions/workflows/$GITHUB_RUN_ID/dispatches"
-
-#           payload="{\"ref\":\"$GITHUB_REF\",\"inputs\":{\"new_version\":\"$new_version\"}}"
-
-#           curl -X POST -H "Authorization: token $token" -H "Accept: application/vnd.github.v3+json" -d "$payload" "$url"
-
-#         shell: bash
-
