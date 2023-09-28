@@ -1,13 +1,23 @@
-name: CI/CD with Versioning and Auto-Merge
+name: Auto-Versioning
 
 on:
-  pull_request:
+  push:
     branches:
-      - develop
-
+      - 'develop'
+      - 'release/*'
+      - 'hotfix/*'
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'develop'
+      - 'release/*'
+      - 'hotfix/*'
+      
 jobs:
-  versioning_and_merge:
+  auto_version:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -15,78 +25,36 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Get Latest Tag using GitHub API
+      - name: Get Latest Tag
         id: get_latest_tag
         run: |
-          latest_tag=$(curl -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-                            -H "Accept: application/vnd.github.v3+json" \
-                            "https://api.github.com/repos/${{ github.repository }}/tags" \
-                            | jq -r '.[0].name')
-          if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major_version="${BASH_REMATCH[1]}"
-            minor_version="${BASH_REMATCH[2]}"
-            patch_version="${BASH_REMATCH[3]}"
-          else
-            echo "Failed to parse the latest tag version."
-            exit 1
-          fi
-          echo "major_version=$major_version" >> $GITHUB_ENV
-          echo "minor_version=$minor_version" >> $GITHUB_ENV
-          echo "patch_version=$patch_version" >> $GITHUB_ENV
-        shell: bash
-      
-      - name: Fetch PR Labels and Count Them
-        id: fetch_pr_labels
-        run: |
-          set -x
-          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
-          | jq -r 'map(.name) | join(",")')
+          # Your existing logic to get the latest tag
+          # ...
 
-          feature_count=0
-          bugfix_count=0
-          for label in $(echo $labels | tr "," "\n"); do
-            if [[ "$label" == "feature" ]]; then
-              ((feature_count++))
-            elif [[ "$label" == "bugfix" ]]; then
-              ((bugfix_count++))
-            fi
-          done
-
-          echo "PR Labels: $labels"
-          echo "Feature Count: $feature_count"
-          echo "Bugfix Count: $bugfix_count"
-
-          echo "pr_labels=$labels" >> $GITHUB_ENV
-          echo "feature_count=$feature_count" >> $GITHUB_ENV
-          echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Calculate and Display New Version
+      - name: Branch-Based Versioning
         id: calculate_version
         run: |
+          branch_name=${GITHUB_REF##*/}
           MAJOR=${{ env.major_version }}
           MINOR=${{ env.minor_version }}
           PATCH=${{ env.patch_version }}
-          feature_count=${{ env.feature_count }}
-          bugfix_count=${{ env.bugfix_count }}
-          pr_labels=${{ env.pr_labels }}
           
-          ((MINOR += feature_count))
-          ((PATCH += bugfix_count))
-          
-          if [[ "$pr_labels" == *"major"* ]]; then
-            ((MAJOR++))
-            MINOR=0
-            PATCH=0
-          elif [[ "$pr_labels" == *"feature"* ]]; then
+          if [[ "$branch_name" == "develop" ]]; then
+            ((MINOR++))
+          elif [[ "$branch_name" == "release/*" ]]; then
             ((MINOR++))
             PATCH=0
-          elif [[ "$pr_labels" == *"bugfix"* ]]; then
+          elif [[ "$branch_name" == "hotfix/*" ]]; then
             ((PATCH++))
           fi
 
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
-        shell: bash
+          echo "new_version=$new_version" >> $GITHUB_ENV
+
+      - name: Create New Tag
+        if: github.event.pull_request.merged == true
+        run: |
+          git tag ${{ env.new_version }}
+          git push origin ${{ env.new_version }}
+        
