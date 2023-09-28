@@ -81,9 +81,9 @@ jobs:
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
           shell: bash
-
+# Debug and fetch open PRs
       - name: Debug and Fetch Open PRs and Predict Next Version
-        id: predict_next_version
+        id: debug_predict_next_version
         run: |
           # Print the current MAJOR, MINOR, and PATCH for debugging
           echo "Current Version: v$MAJOR.$MINOR.$PATCH"
