@@ -1,0 +1,72 @@
+name: CI/CD with Versioning and Auto-Merge
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  versioning_and_merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Latest Tag
+        id: get_latest_tag
+        run: |
+          # Get the latest tag from the repository
+          latest_tag=$(git describe --tags --abbrev=0)
+
+          # Parse the MAJOR, MINOR, and PATCH versions from the tag
+          if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            major_version="${BASH_REMATCH[1]}"
+            minor_version="${BASH_REMATCH[2]}"
+            patch_version="${BASH_REMATCH[3]}"
+          else
+            echo "Failed to parse the latest tag version."
+            exit 1
+          fi
+
+          echo "major_version=$major_version" >> $GITHUB_ENV
+          echo "minor_version=$minor_version" >> $GITHUB_ENV
+          echo "patch_version=$patch_version" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Get Latest Commit Message
+        id: get_latest_commit
+        run: echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Calculate Version
+        id: calculate_version
+        run: |
+          latest_commit_message=${{ env.commit_message }}
+
+          # Increment MAJOR version if latest commit message contains "do-major-update"
+          if [[ "$latest_commit_message" == *"do-major-update"* ]]; then
+            ((MAJOR++))
+          fi
+
+          # Calculate the number of merged feature PRs since the last tag
+          MINOR_ADD=$(git log $(git describe --tags --abbrev=0)..HEAD --pretty=%B | grep -o 'Merge pull request' | grep -c 'feature')
+
+          # Calculate the number of merged bugfix PRs since the last tag
+          PATCH_ADD=$(git log $(git describe --tags --abbrev=0)..HEAD --pretty=%B | grep -o 'Merge pull request' | grep -c 'bugfix')
+
+          # Increment MINOR and PATCH based on these numbers
+          ((MINOR+=MINOR_ADD))
+          ((PATCH+=PATCH_ADD))
+
+          # Set the new version using the GitHub API
+          token="${{ secrets.MY_GITHUB_TOKEN }}"
+          repo="${{ github.repository }}"
+          new_version="v$MAJOR.$MINOR.$PATCH"
+          url="https://api.github.com/repos/$repo/actions/workflows/$GITHUB_RUN_ID/dispatches"
+
+          payload="{\"ref\":\"$GITHUB_REF\",\"inputs\":{\"new_version\":\"$new_version\"}}"
+
+          curl -X POST -H "Authorization: token $token" -H "Accept: application/vnd.github.v3+json" -d "$payload" "$url"
+
+        shell: bash
+
