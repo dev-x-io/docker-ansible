@@ -86,34 +86,6 @@ jobs:
           echo "New Version: $new_version"
         shell: bash
 
-
-      - name: Calculate and Display New Version
-        id: calculate_version
-        run: |
-          MAJOR=${{ env.major_version }}
-          MINOR=${{ env.minor_version }}
-          PATCH=${{ env.patch_version }}
-          pr_labels=${{ env.pr_labels }}
-          
-          set +e  # Allow non-zero exit code for the next commands
-          
-          if [[ "$pr_labels" == *"major"* ]]; then
-            ((MAJOR++))
-            MINOR=0
-            PATCH=0
-          elif [[ "$pr_labels" == *"feature"* ]]; then
-            ((MINOR++))
-            PATCH=0
-          elif [[ "$pr_labels" == *"bugfix"* ]]; then
-            ((PATCH++))
-          fi
-
-          set -e  # Revert to default behavior of failing on non-zero exit code
-
-          new_version="v$MAJOR.$MINOR.$PATCH"
-          echo "New Version: $new_version"
-        shell: bash  
-
 # Predictive versioning based on open PRs
       - name: Fetch Open PRs and Predict Next Version
         id: debug_predict_next_version
