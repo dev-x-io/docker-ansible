@@ -23,9 +23,6 @@ jobs:
                             -H "Accept: application/vnd.github.v3+json" \
                             "https://api.github.com/repos/${{ github.repository }}/tags" \
                             | jq -r '.[0].name')
-          
-          # Log the fetched tag for debugging
-          echo "Latest Tag: $latest_tag"
 
           # Parse the MAJOR, MINOR, and PATCH versions from the tag
           if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
@@ -42,7 +39,6 @@ jobs:
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
 
-
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
@@ -52,8 +48,6 @@ jobs:
           PATCH=${{ env.patch_version }}
 
           # Example logic for incrementing MINOR and PATCH versions
-          # Here you can put your own conditions or calculations
-          # For demonstration, we'll just increment them by 1
           ((MINOR++))
           ((PATCH++))
 
@@ -61,6 +55,8 @@ jobs:
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash
+
+      
 # jobs:
 #   versioning_and_merge:
 #     runs-on: ubuntu-latest
