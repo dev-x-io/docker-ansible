@@ -53,33 +53,6 @@ jobs:
           echo "pr_labels=$labels" >> $GITHUB_ENV
         shell: bash
 
-      # Fetch and count open PRs with labels "Feature" and "Bugfix"
-      - name: Count Open PRs with Specific Labels
-        id: count_open_prs
-        run: |
-          # Fetch all open PRs against 'develop'
-          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop" \
-                    | jq -r '.[] | .labels[].name')
-
-          # Initialize counters for feature and bugfix PRs
-          feature_count=0
-          bugfix_count=0
-
-          # Tally up the features and bugfixes
-          for label in $open_prs; do
-            if [[ "$label" == "feature" ]]; then
-              ((feature_count++))
-            elif [[ "$label" == "bugfix" ]]; then
-              ((bugfix_count++))
-            fi
-          done
-
-          # Save the counts to environment variables
-          echo "feature_count=$feature_count" >> $GITHUB_ENV
-          echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
-        shell: bash
-
       # Calculate and display new version
       - name: Calculate and Display New Version
         id: calculate_version
