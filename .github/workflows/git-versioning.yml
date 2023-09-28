@@ -34,21 +34,11 @@ jobs:
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
-
-      - name: Debugging
-        run: |
-          set -x
-          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH") || exit 1
-          echo "PR Number: $pr_number"
-          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
-          | jq -r 'map(.name) | join(",")') || exit 1
-          echo "Labels: $labels"
-        shell: bash
       
       - name: Fetch PR Labels and Count Them
         id: fetch_pr_labels
         run: |
+          set -x
           pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
