@@ -46,17 +46,19 @@ jobs:
           MAJOR=${{ env.major_version }}
           MINOR=${{ env.minor_version }}
           PATCH=${{ env.patch_version }}
-
+      
+          # Debug: Display existing version variables
+          echo "Existing Version: v$MAJOR.$MINOR.$PATCH"
+      
           # Example logic for incrementing MINOR and PATCH versions
           ((MINOR++))
           ((PATCH++))
-
+      
           # Display the new version for debugging
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash
-
-      
+              
 # jobs:
 #   versioning_and_merge:
 #     runs-on: ubuntu-latest
