@@ -15,47 +15,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install Octokit
-        run: npm install @octokit/rest
-
       - name: Create Pull Request
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          const { Octokit } = require("@octokit/rest");
-          const octokit = new Octokit({ auth: process.env.MY_GITHUB_TOKEN });
+          # Define the base and head branches based on your logic
+          if [[ "$GITHUB_REF" == "refs/heads/feature/*" || "$GITHUB_REF" == "refs/heads/bugfix/*" ]]; then
+            BASE_BRANCH="develop"
+          elif [[ "$GITHUB_REF" == "refs/heads/hotfix/*" || "$GITHUB_REF" == "refs/heads/release/*" ]]; then
+            BASE_BRANCH="main"
+          else
+            echo "No pull request created for this branch."
+            exit 0
+          fi
+          
+          TITLE="Automated PR from $GITHUB_REF"
+          BODY="This is an automated pull request."
 
-          // Define the base and head branches based on your logic
-          let baseBranch, headBranch;
-          switch (${github.ref}) {
-            case 'refs/heads/feature/*':
-            case 'refs/heads/bugfix/*':
-              baseBranch = 'develop';
-              headBranch = ${github.ref};
-              break;
-            case 'refs/heads/hotfix/*':
-            case 'refs/heads/release/*':
-              baseBranch = 'main';
-              headBranch = ${github.ref};
-              break;
-            default:
-              console.log('No pull request created for this branch.');
-              return;
-          }
+          # Create the pull request using the GitHub API
+          RESPONSE=$(curl -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
+            "title": "'"$TITLE"'",
+            "body": "'"$BODY"'",
+            "head": "'"$GITHUB_REF"'",
+            "base": "'"$BASE_BRANCH"'"
+          }' "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls")
 
-          // Create the pull request
-          const response = await octokit.pulls.create({
-            owner: '${{ github.repository_owner }}',
-            repo: '${{ github.repository }}',
-            base: baseBranch,
-            head: headBranch,
-            title: `Automated PR from ${github.ref}`,
-            body: 'This is an automated pull request.',
-          });
-
-          console.log(`Pull request created: ${response.data.html_url}`);
+          # Check if the pull request was created successfully
+          PR_URL=$(echo "$RESPONSE" | jq -r '.html_url')
+          if [ -n "$PR_URL" ]; then
+            echo "Pull request created: $PR_URL"
+          else
+            echo "Failed to create pull request."
+            exit 1
+          fi
