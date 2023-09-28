@@ -11,10 +11,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+# Install requirements
       - name: Install jq
         run: sudo apt-get install -y jq
-
+# Get the latest tag
       - name: Get Latest Tag using GitHub API
         id: get_latest_tag
         run: |
@@ -38,7 +38,37 @@ jobs:
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
+# Predictive versioning based on open PRs
+      - name: Fetch Open PRs and Predict Next Version
+        id: predict_next_version
+        run: |
+          # Fetch all open PRs against 'develop'
+          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop" \
+                    | jq -r '.[] | .labels[].name')
 
+          # Initialize counters for feature and bugfix PRs
+          feature_count=0
+          bugfix_count=0
+
+          # Tally up the features and bugfixes
+          for label in $open_prs; do
+            if [[ "$label" == "feature" ]]; then
+              ((feature_count++))
+            elif [[ "$label" == "bugfix" ]]; then
+              ((bugfix_count++))
+            fi
+          done
+
+          # Predict the next version based on the tallied features and bugfixes
+          next_minor=$(( MINOR + feature_count ))
+          next_patch=$(( PATCH + bugfix_count ))
+
+          # Display the predicted next version for debugging
+          predicted_version="v$MAJOR.$next_minor.$next_patch"
+          echo "Predicted Next Version (if all open PRs are merged): $predicted_version"
+        shell: bash
+# Versioning strategy based on PR labels
       - name: Fetch PR Labels
         id: fetch_pr_labels
         run: |
@@ -49,7 +79,7 @@ jobs:
           echo "PR Labels: $labels"
           echo "pr_labels=$labels" >> $GITHUB_ENV
         shell: bash
-
+# Calculate and display new version
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
