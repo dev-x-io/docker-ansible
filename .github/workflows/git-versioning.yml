@@ -49,11 +49,17 @@ jobs:
       
           # Debug: Display existing version variables
           echo "Existing Version: v$MAJOR.$MINOR.$PATCH"
-      
+
+          # Allow non-zero exit code for the next commands
+          set +e
+
           # Example logic for incrementing MINOR and PATCH versions
           ((MINOR++))
           ((PATCH++))
-      
+
+          # Revert to default behavior of failing on non-zero exit code
+          set -e
+
           # Display the new version for debugging
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
