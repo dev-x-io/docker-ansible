@@ -53,9 +53,9 @@ jobs:
           echo "pr_labels=$labels" >> $GITHUB_ENV
         shell: bash
 
-      # Fetch all open PRs and predict the next MINOR and PATCH versions
-      - name: Predict Next MINOR and PATCH Versions
-        id: predict_versions
+      # Fetch and count open PRs with labels "Feature" and "Bugfix"
+      - name: Count Open PRs with Specific Labels
+        id: count_open_prs
         run: |
           # Fetch all open PRs against 'develop'
           open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
@@ -75,23 +75,39 @@ jobs:
             fi
           done
 
-          # Set the environment variables
+          # Save the counts to environment variables
           echo "feature_count=$feature_count" >> $GITHUB_ENV
           echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
+        shell: bash
 
-      # Calculate and display the new version
-      - name: Calculate and Display New Predicted Version
+      # Calculate and display new version
+      - name: Calculate and Display New Version
         id: calculate_version
         run: |
           MAJOR=${{ env.major_version }}
-          MINOR=${{ env.minor_version }}
-          PATCH=${{ env.patch_version }}
-          feature_count=${{ env.feature_count }}
-          bugfix_count=${{ env.bugfix_count }}
-
-          # Add the feature_count and bugfix_count to MINOR and PATCH
-          MINOR=$((MINOR + feature_count))
-          PATCH=$((PATCH + bugfix_count))
-
+          MINOR=${{ env.minor_version }}+${{ env.feature_count }}
+          PATCH=${{ env.patch_version }}+${{ env.bugfix_count }}
+          pr_labels=${{ env.pr_labels }}
+          
+          # Allow non-zero exit code for the next commands
+          set +e
+          
+          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
+          if [[ "$pr_labels" == *"major"* ]]; then
+            ((MAJOR++))
+            MINOR=0
+            PATCH=0
+          elif [[ "$pr_labels" == *"feature"* ]]; then
+            ((MINOR++))
+            PATCH=0
+          elif [[ "$pr_labels" == *"bugfix"* ]]; then
+            ((PATCH++))
+          fi
+          
+          # Revert to default behavior of failing on non-zero exit code
+          set -e
+          
+          # Display the new version for debugging
           new_version="v$MAJOR.$MINOR.$PATCH"
-          echo "New Predicted Version: $new_version"
+          echo "New Version: $new_version"
+        shell: bash
