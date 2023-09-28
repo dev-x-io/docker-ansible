@@ -39,6 +39,17 @@ jobs:
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
 
+      - name: Fetch PR Labels
+        id: fetch_pr_labels
+        run: |
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                        "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
+                  | jq -r 'map(.name) | join(",")')
+          echo "PR Labels: $labels"
+          echo "pr_labels=$labels" >> $GITHUB_ENV
+        shell: bash
+
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
@@ -46,16 +57,22 @@ jobs:
           MAJOR=${{ env.major_version }}
           MINOR=${{ env.minor_version }}
           PATCH=${{ env.patch_version }}
-      
-          # Debug: Display existing version variables
-          echo "Existing Version: v$MAJOR.$MINOR.$PATCH"
+          pr_labels=${{ env.pr_labels }}
 
           # Allow non-zero exit code for the next commands
           set +e
 
-          # Example logic for incrementing MINOR and PATCH versions
-          ((MINOR++))
-          ((PATCH++))
+          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
+          if [[ "$pr_labels" == *"major"* ]]; then
+            ((MAJOR++))
+            MINOR=0
+            PATCH=0
+          elif [[ "$pr_labels" == *"feature"* ]]; then
+            ((MINOR++))
+            PATCH=0
+          elif [[ "$pr_labels" == *"bugfix"* ]]; then
+            ((PATCH++))
+          fi
 
           # Revert to default behavior of failing on non-zero exit code
           set -e
@@ -64,7 +81,7 @@ jobs:
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash
-              
+        
 # jobs:
 #   versioning_and_merge:
 #     runs-on: ubuntu-latest
