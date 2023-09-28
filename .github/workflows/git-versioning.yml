@@ -1,0 +1,60 @@
+name: Auto-Versioning
+
+on:
+  push:
+    branches:
+      - 'develop'
+      - 'release/*'
+      - 'hotfix/*'
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'develop'
+      - 'release/*'
+      - 'hotfix/*'
+      
+jobs:
+  auto_version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Get Latest Tag
+        id: get_latest_tag
+        run: |
+          # Your existing logic to get the latest tag
+          # ...
+
+      - name: Branch-Based Versioning
+        id: calculate_version
+        run: |
+          branch_name=${GITHUB_REF##*/}
+          MAJOR=${{ env.major_version }}
+          MINOR=${{ env.minor_version }}
+          PATCH=${{ env.patch_version }}
+          
+          if [[ "$branch_name" == "develop" ]]; then
+            ((MINOR++))
+          elif [[ "$branch_name" == "release/*" ]]; then
+            ((MINOR++))
+            PATCH=0
+          elif [[ "$branch_name" == "hotfix/*" ]]; then
+            ((PATCH++))
+          fi
+
+          new_version="v$MAJOR.$MINOR.$PATCH"
+          echo "New Version: $new_version"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+
+      - name: Create New Tag
+        if: github.event.pull_request.merged == true
+        run: |
+          git tag ${{ env.new_version }}
+          git push origin ${{ env.new_version }}
+        
