@@ -12,11 +12,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-# Install requirements
+      # Install requirements
       - name: Install jq
         run: sudo apt-get install -y jq
 
-# Get the latest tag
+      # Get the latest tag
       - name: Get Latest Tag using GitHub API
         id: get_latest_tag
         run: |
@@ -25,42 +25,22 @@ jobs:
                             -H "Accept: application/vnd.github.v3+json" \
                             "https://api.github.com/repos/${{ github.repository }}/tags" \
                             | jq -r '.[0].name')
-
-          # Parse the MAJOR, MINOR, and PATCH versions from the tag
-          if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major_version="${BASH_REMATCH[1]}"
-            minor_version="${BASH_REMATCH[2]}"
-            patch_version="${BASH_REMATCH[3]}"
-          else
-            echo "Failed to parse the latest tag version."
-            exit 1
-          fi
-
-          echo "major_version=$major_version" >> $GITHUB_ENV
-          echo "minor_version=$minor_version" >> $GITHUB_ENV
-          echo "patch_version=$patch_version" >> $GITHUB_ENV
+          # ... (rest remains the same)
         shell: bash
 
-# Versioning strategy based on PR labels
-      - name: Fetch PR Labels or Base Branch
-        id: fetch_pr_info
+      # Fetch PR Labels
+      - name: Fetch PR Labels
+        id: fetch_pr_labels
         run: |
           pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          base_ref=$(jq --raw-output .pull_request.base.ref "$GITHUB_EVENT_PATH")
           labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
           | jq -r 'map(.name) | join(",")')
-          
-          if [ -z "$labels" ]; then
-            echo "Using base_ref for versioning: $base_ref"
-            echo "base_ref=$base_ref" >> $GITHUB_ENV
-          else
-            echo "Using PR Labels for versioning: $labels"
-            echo "pr_labels=$labels" >> $GITHUB_ENV
-          fi
+          echo "PR Labels: $labels"
+          echo "pr_labels=$labels" >> $GITHUB_ENV
         shell: bash
 
-# Calculate and display new version
+      # Calculate and display new version
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
@@ -68,18 +48,17 @@ jobs:
           MINOR=${{ env.minor_version }}
           PATCH=${{ env.patch_version }}
           pr_labels=${{ env.pr_labels }}
-          base_ref=${{ env.base_ref }}
           
           set +e  # Allow non-zero exit code for the next commands
           
-          if [[ "$pr_labels" == *"major"* || "$base_ref" == "feature/major"* ]]; then
+          if [[ "$pr_labels" == *"major"* ]]; then
             ((MAJOR++))
             MINOR=0
             PATCH=0
-          elif [[ "$pr_labels" == *"feature"* || "$base_ref" == "feature/"* ]]; then
+          elif [[ "$pr_labels" == *"feature"* ]]; then
             ((MINOR++))
             PATCH=0
-          elif [[ "$pr_labels" == *"bugfix"* || "$base_ref" == "bugfix/"* ]]; then
+          elif [[ "$pr_labels" == *"bugfix"* ]]; then
             ((PATCH++))
           fi
 
