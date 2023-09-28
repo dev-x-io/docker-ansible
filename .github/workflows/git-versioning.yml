@@ -25,9 +25,22 @@ jobs:
                             -H "Accept: application/vnd.github.v3+json" \
                             "https://api.github.com/repos/${{ github.repository }}/tags" \
                             | jq -r '.[0].name')
-          # ... (rest remains the same)
-        shell: bash
 
+          # Parse the MAJOR, MINOR, and PATCH versions from the tag
+          if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            major_version="${BASH_REMATCH[1]}"
+            minor_version="${BASH_REMATCH[2]}"
+            patch_version="${BASH_REMATCH[3]}"
+          else
+            echo "Failed to parse the latest tag version."
+            exit 1
+          fi
+
+          echo "major_version=$major_version" >> $GITHUB_ENV
+          echo "minor_version=$minor_version" >> $GITHUB_ENV
+          echo "patch_version=$patch_version" >> $GITHUB_ENV
+        shell: bash
+        
       # Fetch PR Labels
       - name: Fetch PR Labels
         id: fetch_pr_labels
@@ -67,35 +80,3 @@ jobs:
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash
-
-# Predictive versioning based on open PRs
-      - name: Fetch Open PRs and Predict Next Version
-        id: debug_predict_next_version
-        run: |
-          # Fetch all open PRs against 'develop'
-          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop" \
-                    | jq -r '.[] | .labels[].name')
-
-          # Initialize counters for feature and bugfix PRs
-          feature_count=0
-          bugfix_count=0
-
-          # Tally up the features and bugfixes
-          for label in $open_prs; do
-            if [[ "$label" == "feature" ]]; then
-              ((feature_count++))
-            elif [[ "$label" == "bugfix" ]]; then
-              ((bugfix_count++))
-            fi
-          done
-
-          # Predict the next version based on the tallied features and bugfixes
-          next_minor=$(( MINOR + feature_count ))
-          next_patch=$(( PATCH + bugfix_count ))
-
-          # Display the predicted next version for debugging
-          predicted_version="v$MAJOR.$next_minor.$next_patch"
-          echo "Predicted Next Version (if all open PRs are merged): $predicted_version"
-        shell: bash
-        
