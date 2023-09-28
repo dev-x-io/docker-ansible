@@ -1,0 +1,27 @@
+name: Debug Fetch PR Labels
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Fetch PR Labels
+        id: debug_fetch_pr_labels
+        run: |
+          set -x  # Debug mode
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                     "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels")
+          echo "Raw API Response: $response"
+          labels=$(echo "$response" | jq -r 'map(.name) | join(",")')
+          echo "Parsed Labels: $labels"
