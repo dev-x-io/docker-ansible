@@ -43,7 +43,7 @@ jobs:
         shell: bash
 
 
-        - name: Calculate and Display New Version
+      - name: Calculate and Display New Version
         id: calculate_version
         run: |
           # Fetch the existing MAJOR, MINOR, and PATCH versions from environment variables
