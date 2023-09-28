@@ -41,9 +41,10 @@ jobs:
       - name: Fetch PR Labels and Count
         id: fetch_pr_labels_and_count
         run: |
+          set -x  # Debug mode
           pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/labels" \
+          labels=$(curl -s -H "Authorization: token ***" \
+          "https://api.github.com/repos/dev-x-io/docker-ansible/issues/$pr_number/labels" \
           | jq -r 'map(.name) | join(",")')
           
           feature_count=0
@@ -55,7 +56,7 @@ jobs:
               ((bugfix_count++))
             fi
           done
-
+          
           echo "PR Labels: $labels"
           echo "Feature Count: $feature_count"
           echo "Bugfix Count: $bugfix_count"
