@@ -12,20 +12,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Install requirements
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      # Get the latest tag
       - name: Get Latest Tag using GitHub API
         id: get_latest_tag
         run: |
-          # Fetch the latest tag from GitHub API
           latest_tag=$(curl -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
                             -H "Accept: application/vnd.github.v3+json" \
                             "https://api.github.com/repos/${{ github.repository }}/tags" \
                             | jq -r '.[0].name')
-          
           if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
             major_version="${BASH_REMATCH[1]}"
             minor_version="${BASH_REMATCH[2]}"
@@ -34,13 +30,11 @@ jobs:
             echo "Failed to parse the latest tag version."
             exit 1
           fi
-          
           echo "major_version=$major_version" >> $GITHUB_ENV
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
 
-      # Fetch PR Labels and Count Them
       - name: Fetch PR Labels and Count Them
         id: fetch_pr_labels
         run: |
@@ -68,16 +62,18 @@ jobs:
           echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
         shell: bash
 
-      # Calculate and display new version
       - name: Calculate and Display New Version
         id: calculate_version
         run: |
           MAJOR=${{ env.major_version }}
-          MINOR=${{ env.minor_version }}+${{ env.feature_count }}
-          PATCH=${{ env.patch_version }}+${{ env.bugfix_count }}
+          MINOR=${{ env.minor_version }}
+          PATCH=${{ env.patch_version }}
+          feature_count=${{ env.feature_count }}
+          bugfix_count=${{ env.bugfix_count }}
           pr_labels=${{ env.pr_labels }}
           
-          set +e  # Allow non-zero exit code for the next commands
+          ((MINOR += feature_count))
+          ((PATCH += bugfix_count))
           
           if [[ "$pr_labels" == *"major"* ]]; then
             ((MAJOR++))
@@ -89,8 +85,6 @@ jobs:
           elif [[ "$pr_labels" == *"bugfix"* ]]; then
             ((PATCH++))
           fi
-
-          set -e  # Revert to default behavior of failing on non-zero exit code
 
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
