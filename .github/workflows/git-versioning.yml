@@ -51,7 +51,7 @@ jobs:
           | jq -r 'map(.name) | join(",")')
           echo "PR Labels: $labels"
           echo "pr_labels=$labels" >> $GITHUB_ENV
-          shell: bash
+        shell: bash
 
 # Calculate and display new version
       - name: Calculate and Display New Version
