@@ -20,13 +20,10 @@ jobs:
       - name: Get Latest Tag using GitHub API
         id: get_latest_tag
         run: |
-          # Fetch the latest tag from GitHub API
           latest_tag=$(curl -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
                             -H "Accept: application/vnd.github.v3+json" \
                             "https://api.github.com/repos/${{ github.repository }}/tags" \
                             | jq -r '.[0].name')
-
-          # Parse the MAJOR, MINOR, and PATCH versions from the tag
           if [[ $latest_tag =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
             major_version="${BASH_REMATCH[1]}"
             minor_version="${BASH_REMATCH[2]}"
@@ -35,12 +32,31 @@ jobs:
             echo "Failed to parse the latest tag version."
             exit 1
           fi
-
           echo "major_version=$major_version" >> $GITHUB_ENV
           echo "minor_version=$minor_version" >> $GITHUB_ENV
           echo "patch_version=$patch_version" >> $GITHUB_ENV
         shell: bash
-        
+
+      # Fetch all open PRs against 'develop' and count features and bugfixes
+      - name: Fetch and Count Open PRs
+        id: count_open_prs
+        run: |
+          open_prs=$(curl -s -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open&base=develop" \
+                    | jq -r '.[] | .labels[].name')
+          feature_count=0
+          bugfix_count=0
+          for label in $open_prs; do
+            if [[ "$label" == "feature" ]]; then
+              ((feature_count++))
+            elif [[ "$label" == "bugfix" ]]; then
+              ((bugfix_count++))
+            fi
+          done
+          echo "feature_count=$feature_count" >> $GITHUB_ENV
+          echo "bugfix_count=$bugfix_count" >> $GITHUB_ENV
+        shell: bash
+
       # Fetch PR Labels
       - name: Fetch PR Labels
         id: fetch_pr_labels
@@ -58,14 +74,13 @@ jobs:
         id: calculate_version
         run: |
           MAJOR=${{ env.major_version }}
-          MINOR=${{ env.minor_version }}+${{ env.feature_count }}
-          PATCH=${{ env.patch_version }}+${{ env.bugfix_count }}
+          MINOR=$(( ${{ env.minor_version }} + ${{ env.feature_count }} ))
+          PATCH=$(( ${{ env.patch_version }} + ${{ env.bugfix_count }} ))
           pr_labels=${{ env.pr_labels }}
-          
+
           # Allow non-zero exit code for the next commands
           set +e
           
-          # Logic for incrementing MAJOR, MINOR, and PATCH versions based on PR labels
           if [[ "$pr_labels" == *"major"* ]]; then
             ((MAJOR++))
             MINOR=0
@@ -76,11 +91,10 @@ jobs:
           elif [[ "$pr_labels" == *"bugfix"* ]]; then
             ((PATCH++))
           fi
-          
+
           # Revert to default behavior of failing on non-zero exit code
           set -e
-          
-          # Display the new version for debugging
+
           new_version="v$MAJOR.$MINOR.$PATCH"
           echo "New Version: $new_version"
         shell: bash
