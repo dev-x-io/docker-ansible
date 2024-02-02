@@ -1,0 +1,64 @@
+name: Create Pull Request
+
+on:
+  push:
+    branches:
+      - feature/**
+      - bugfix/**
+      - hotfix/**
+      - release/**
+
+jobs:
+  createPR:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create and Label Pull Request
+        env:
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          # Define the base and head branches based on your logic
+          LABEL=""
+          if [[ "$GITHUB_REF" == "refs/heads/feature/"* ]]; then
+            BASE_BRANCH="develop"
+            LABEL="feature"
+          elif [[ "$GITHUB_REF" == "refs/heads/bugfix/"* ]]; then
+            BASE_BRANCH="develop"
+            LABEL="bugfix"
+          elif [[ "$GITHUB_REF" == "refs/heads/hotfix/"* || "$GITHUB_REF" == "refs/heads/release/"* ]]; then
+            BASE_BRANCH="main"
+            LABEL="hotfix"
+          else
+            echo "No pull request created for this branch."
+            exit 0
+          fi
+   
+          TITLE="Automated PR from $GITHUB_REF"
+          BODY="This is an automated pull request."
+
+          # Create the pull request using the GitHub API
+          RESPONSE=$(curl -s -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
+            "title": "'"$TITLE"'",
+            "body": "'"$BODY"'",
+            "head": "'"$GITHUB_REF"'",
+            "base": "'"$BASE_BRANCH"'"
+          }' "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls")
+
+          # Extract the PR number from the response
+          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.number')
+
+          # Add the label to the PR
+          if [ -n "$PR_NUMBER" ]; then
+            curl -s -X POST -H "Authorization: token $MY_GITHUB_TOKEN" -d '{
+              "labels": ["'"$LABEL"'"]
+            }' "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER"
+
+            echo "Pull request $PR_NUMBER created and labeled with $LABEL."
+          else
+            echo "Failed to create pull request."
+            exit 1
+          fi

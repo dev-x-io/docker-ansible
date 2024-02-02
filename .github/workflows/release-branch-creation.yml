@@ -1,0 +1,33 @@
+# Workflow for Creating Release Branch
+name: Create Release Branch
+
+env:
+    MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+  
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - '**.md'
+      - './docs/**'
+      - './img/**'
+      - './Makefile'
+
+jobs:
+  release-branch:
+    if: "contains(github.event.head_commit.message, 'pre-release/')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Release Branch
+        run: |
+          RELEASE_VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -o 'pre-release/v[0-9]\+\.[0-9]\+\.[0-9]\+')
+          RELEASE_VERSION=${RELEASE_VERSION#pre-release/}
+          git checkout -b release/$RELEASE_VERSION
+          git push origin release/$RELEASE_VERSION
+
+        env:
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
